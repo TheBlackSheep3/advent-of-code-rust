@@ -36,7 +36,7 @@ fn get_top_n_calorie_sum_from_text(calorie_str: &str, n: usize) -> Result<i32, P
 
 fn foo(curr: i32, highest: &mut Vec<i32>) {
     let mut current = curr;
-    for val in highest.iter_mut() {
+    for val in highest {
         if *val < current {
             let tmp = *val;
             *val = current;
