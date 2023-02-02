@@ -16,4 +16,8 @@ fn main() {
         Ok(cal) => println!("highest count of calories is {cal}"),
         Err(e) => println!("{e}"),
     }
+    match year_2022::day01::get_top_n_calorie_sum_from_input_file(path, 3) {
+        Ok(cal) => println!("the sum of the top 3 calories is {cal}"),
+        Err(e) => println!("{e}"),
+    }
 }
