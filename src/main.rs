@@ -18,7 +18,7 @@ fn main() {
             return;
         }
     };
-    match solutions::year_2022::day03::get_badge_sum(&input) {
+    match solutions::year_2022::day04::get_overlapping_pair_count(&input) {
         Some(s) => println!("the sum is {}", s),
         None => println!("failed to calculate the sum"),
     }
