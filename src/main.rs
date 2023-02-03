@@ -20,12 +20,8 @@ fn main() {
             return;
         }
     };
-    match year_2022::day01::get_highest_calories(&input) {
-        Ok(cal) => println!("highest count of calories is {cal}"),
-        Err(e) => println!("{e}"),
-    }
-    match year_2022::day01::get_top_n_calorie_sum(&input, 3) {
-        Ok(cal) => println!("the sum of the top 3 calories is {cal}"),
+    match year_2022::day02::get_rock_paper_scissors_score(&input) {
+        Ok(score) => println!("my score is {}", score.right),
         Err(e) => println!("{e}"),
     }
 }
