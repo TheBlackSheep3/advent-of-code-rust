@@ -5,6 +5,10 @@ edition = "2021"
 authors = ["TheBlackSheep3"]
 readme = "README.md"
 
+[lib]
+name = "year_2022"
+path = "src/year_2022/lib.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

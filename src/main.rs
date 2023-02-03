@@ -1,5 +1,3 @@
-mod year_2022;
-
 use std::env::args;
 use std::fs;
 use std::path::Path;
