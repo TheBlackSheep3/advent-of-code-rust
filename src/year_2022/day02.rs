@@ -27,15 +27,17 @@ impl AddAssign for PlayerScore {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum RockPaperScissorsChoice {
     Rock,
     Paper,
     Scissors,
 }
 
-pub fn get_rock_paper_scissors_score(input: &str) -> Result<PlayerScore, ParseRockPaperScissorsError> {
-    let mut result: PlayerScore = PlayerScore{ left: 0, right: 0 };
+pub fn get_rock_paper_scissors_score(
+    input: &str,
+) -> Result<PlayerScore, ParseRockPaperScissorsError> {
+    let mut result: PlayerScore = PlayerScore { left: 0, right: 0 };
     for line in input.lines() {
         let (left_choice, right_choice) = parse_choices(line)?;
         result += get_score(&left_choice, &right_choice);
@@ -43,33 +45,43 @@ pub fn get_rock_paper_scissors_score(input: &str) -> Result<PlayerScore, ParseRo
     Ok(result)
 }
 
-fn parse_choices(line: &str) -> Result<(RockPaperScissorsChoice, RockPaperScissorsChoice), ParseRockPaperScissorsError> {
+fn parse_choices(
+    line: &str,
+) -> Result<(RockPaperScissorsChoice, RockPaperScissorsChoice), ParseRockPaperScissorsError> {
     let mut iterator = line.split_whitespace();
     let left: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError{line: line}),
+        None => return Err(ParseRockPaperScissorsError { line: line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError{line: line});
+                return Err(ParseRockPaperScissorsError { line: line });
             }
             match string.chars().nth(0) {
                 Some('A') => RockPaperScissorsChoice::Rock,
                 Some('B') => RockPaperScissorsChoice::Paper,
                 Some('C') => RockPaperScissorsChoice::Scissors,
-                _ => return Err(ParseRockPaperScissorsError{line: line}),
+                _ => return Err(ParseRockPaperScissorsError { line: line }),
             }
         }
     };
     let right: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError{line: line}),
+        None => return Err(ParseRockPaperScissorsError { line: line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError{line: line});
+                return Err(ParseRockPaperScissorsError { line: line });
             }
             match string.chars().nth(0) {
-                Some('X') => RockPaperScissorsChoice::Rock,
-                Some('Y') => RockPaperScissorsChoice::Paper,
-                Some('Z') => RockPaperScissorsChoice::Scissors,
-                _ => return Err(ParseRockPaperScissorsError{line: line}),
+                Some('X') => match &left {
+                    RockPaperScissorsChoice::Rock => RockPaperScissorsChoice::Scissors,
+                    RockPaperScissorsChoice::Paper => RockPaperScissorsChoice::Rock,
+                    RockPaperScissorsChoice::Scissors => RockPaperScissorsChoice::Paper,
+                },
+                Some('Y') => left.clone(),
+                Some('Z') => match &left {
+                    RockPaperScissorsChoice::Rock => RockPaperScissorsChoice::Paper,
+                    RockPaperScissorsChoice::Paper => RockPaperScissorsChoice::Scissors,
+                    RockPaperScissorsChoice::Scissors => RockPaperScissorsChoice::Rock,
+                },
+                _ => return Err(ParseRockPaperScissorsError { line: line }),
             }
         }
     };
@@ -133,7 +145,7 @@ mod tests {
 
     #[test]
     fn correct_sum() {
-        assert_eq!(get_rock_paper_scissors_score(TEST_STR).unwrap().right, 15);
+        assert_eq!(get_rock_paper_scissors_score(TEST_STR).unwrap().right, 12);
     }
 
     #[test]
@@ -142,7 +154,7 @@ mod tests {
             Ok(_) => {
                 assert!(false, "this method should return a parsing error");
                 return;
-            },
+            }
             Err(e) => e,
         };
         assert_eq!(error.line, "AY");
@@ -150,15 +162,66 @@ mod tests {
 
     #[test]
     fn correct_parse() {
-        assert_eq!(parse_choices("A X").unwrap(), (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock));
-        assert_eq!(parse_choices("A Y").unwrap(), (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Paper));
-        assert_eq!(parse_choices("A Z").unwrap(), (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Scissors));
-        assert_eq!(parse_choices("B X").unwrap(), (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Rock));
-        assert_eq!(parse_choices("B Y").unwrap(), (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Paper));
-        assert_eq!(parse_choices("B Z").unwrap(), (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Scissors));
-        assert_eq!(parse_choices("C X").unwrap(), (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Rock));
-        assert_eq!(parse_choices("C Y").unwrap(), (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Paper));
-        assert_eq!(parse_choices("C Z").unwrap(), (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Scissors));
+        assert_eq!(
+            parse_choices("A X").unwrap(),
+            (
+                RockPaperScissorsChoice::Rock,
+                RockPaperScissorsChoice::Scissors
+            )
+        );
+        assert_eq!(
+            parse_choices("A Y").unwrap(),
+            (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock)
+        );
+        assert_eq!(
+            parse_choices("A Z").unwrap(),
+            (
+                RockPaperScissorsChoice::Rock,
+                RockPaperScissorsChoice::Paper
+            )
+        );
+        assert_eq!(
+            parse_choices("B X").unwrap(),
+            (
+                RockPaperScissorsChoice::Paper,
+                RockPaperScissorsChoice::Rock
+            )
+        );
+        assert_eq!(
+            parse_choices("B Y").unwrap(),
+            (
+                RockPaperScissorsChoice::Paper,
+                RockPaperScissorsChoice::Paper
+            )
+        );
+        assert_eq!(
+            parse_choices("B Z").unwrap(),
+            (
+                RockPaperScissorsChoice::Paper,
+                RockPaperScissorsChoice::Scissors
+            )
+        );
+        assert_eq!(
+            parse_choices("C X").unwrap(),
+            (
+                RockPaperScissorsChoice::Scissors,
+                RockPaperScissorsChoice::Paper
+            )
+        );
+        assert_eq!(
+            parse_choices("C Y").unwrap(),
+            (
+                RockPaperScissorsChoice::Scissors,
+                RockPaperScissorsChoice::Scissors
+            )
+        );
+        assert_eq!(
+            parse_choices("C Z").unwrap(),
+            (
+                RockPaperScissorsChoice::Scissors,
+                RockPaperScissorsChoice::Rock
+            )
+        );
     }
 
     #[test]
