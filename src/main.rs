@@ -18,8 +18,8 @@ fn main() {
             return;
         }
     };
-    match solutions::year_2022::day02::get_rock_paper_scissors_score(&input) {
-        Ok(score) => println!("my score is {}", score.right),
-        Err(e) => println!("{e}"),
+    match solutions::year_2022::day03::get_priority_sum(&input) {
+        Some(s) => println!("the sum is {}", s),
+        None => println!("failed to calculate the sum"),
     }
 }
