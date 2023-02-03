@@ -18,7 +18,7 @@ fn main() {
             return;
         }
     };
-    match year_2022::day02::get_rock_paper_scissors_score(&input) {
+    match solutions::year_2022::day02::get_rock_paper_scissors_score(&input) {
         Ok(score) => println!("my score is {}", score.right),
         Err(e) => println!("{e}"),
     }
