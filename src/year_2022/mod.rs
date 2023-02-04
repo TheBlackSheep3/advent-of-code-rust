@@ -49,7 +49,7 @@ pub fn solve(day: u8, input: &str) {
             }
         }
         5..=25 => {
-            println!("not yet implemented");
+            super::print_not_implemented(2022, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
     }
