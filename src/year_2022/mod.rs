@@ -55,7 +55,13 @@ pub fn solve(day: u8, input: &str) {
                 None => println!("error"),
             }
         }
-        5..=25 => {
+        5 =>{ match day05::get_top_crates(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(e) => println!("{}", e),
+        }
+            
+        },
+        6..=25 => {
             super::print_not_implemented(2022, day);
         }
         _ => println!("{} is not a valid day for challenges", day),

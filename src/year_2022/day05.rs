@@ -1,13 +1,20 @@
 use regex::Regex;
 use std::collections::HashMap;
 
-pub fn get_top_crates(input: &str) -> Option<String> {
-    let problem = parse_input(input);
-    Some("".to_string())
+pub fn get_top_crates(input: &str) -> Result<String, CrateProblemError> {
+    let mut problem = match parse_input(input) {
+        Some(p) => p,
+        None => return Err(CrateProblemError::Parse),
+    };
+    problem.execute_instructions()?;
+    match problem.get_top_string() {
+        Some(s) => Ok(s),
+        None => Err(CrateProblemError::Evaluate),
+    }
 }
 
-#[derive(Clone,Copy)]
-struct Instruction {
+#[derive(Clone, Copy, PartialEq)]
+pub struct Instruction {
     amount: i32,
     source: i32,
     destination: i32,
@@ -15,7 +22,11 @@ struct Instruction {
 
 impl std::fmt::Debug for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "move {} from {} to {}", self.amount, self.source, self.destination)
+        write!(
+            f,
+            "move {} from {} to {}",
+            self.amount, self.source, self.destination
+        )
     }
 }
 
@@ -31,28 +42,29 @@ impl Problem {
         for i in 1..self.stacks.len() + 1 {
             char_vector.push(*self.stacks.get(&(i as i32))?.last()?);
         }
-        println!("{:?}", char_vector);
         Some(char_vector.iter().fold(String::new(), |mut string, &c| {
             string.push(c);
             string
         }))
     }
 
-    fn execute_instructions(&mut self) -> Result<(), InstructionExecutionError> {
+    fn execute_instructions(&mut self) -> Result<(), CrateProblemError> {
         for instruction in self.instructions.clone().iter() {
             for _i in 0..instruction.amount {
                 let source_stack = match self.stacks.get_mut(&instruction.source) {
                     Some(s) => s,
-                    None => return Err(InstructionExecutionError::InvalidSource(*instruction)),
+                    None => return Err(CrateProblemError::InstructionInvalidSource(*instruction)),
                 };
                 let cr = match source_stack.pop() {
                     Some(c) => c,
-                    None => return Err(InstructionExecutionError::InvalidAmount(*instruction)),
+                    None => return Err(CrateProblemError::InstructionInvalidAmount(*instruction)),
                 };
                 let destination_stack = match self.stacks.get_mut(&instruction.destination) {
                     Some(s) => s,
                     None => {
-                        return Err(InstructionExecutionError::InvalidDestination(*instruction))
+                        return Err(CrateProblemError::InstructionInvalidDestination(
+                            *instruction,
+                        ))
                     }
                 };
                 destination_stack.push(cr);
@@ -63,18 +75,29 @@ impl Problem {
     }
 }
 
-enum InstructionExecutionError {
-    InvalidAmount(Instruction),
-    InvalidSource(Instruction),
-    InvalidDestination(Instruction),
+#[derive(PartialEq)]
+pub enum CrateProblemError {
+    Parse,
+    Evaluate,
+    InstructionInvalidAmount(Instruction),
+    InstructionInvalidSource(Instruction),
+    InstructionInvalidDestination(Instruction),
 }
 
-impl std::fmt::Debug for InstructionExecutionError {
+impl std::fmt::Display for CrateProblemError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl std::fmt::Debug for CrateProblemError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (string, instruction) = match self {
-            InstructionExecutionError::InvalidAmount(a) => ("invalid amount", a),
-            InstructionExecutionError::InvalidSource(a) => ("invalid source",a),
-            InstructionExecutionError::InvalidDestination(a) => ("invalid destination",a),
+            CrateProblemError::Evaluate => return write!(f, "failed to evaluate top string"),
+            CrateProblemError::Parse => return write!(f, "failed to parse problem"),
+            CrateProblemError::InstructionInvalidAmount(a) => ("invalid amount", a),
+            CrateProblemError::InstructionInvalidSource(a) => ("invalid source", a),
+            CrateProblemError::InstructionInvalidDestination(a) => ("invalid destination", a),
         };
         write!(f, "{}: {:?}", string, instruction)
     }
@@ -154,7 +177,7 @@ move 1 from 1 to 2";
 
     #[test]
     fn top_crates() {
-        assert_eq!(get_top_crates(TEST_INPUT), Some("CMZ".to_string()));
+        assert_eq!(get_top_crates(TEST_INPUT), Ok("CMZ".to_string()));
     }
 
     #[test]
