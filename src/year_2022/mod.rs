@@ -34,7 +34,7 @@ pub fn solve(day: u8, input: &str) {
                 Ok(x) => println!("part 1: {}", x.right),
                 Err(e) => println!("{}", e),
             }
-        },
+        }
         3 => {
             match day03::get_priority_sum(input) {
                 Some(x) => println!("part 1: {}", x),
@@ -55,12 +55,16 @@ pub fn solve(day: u8, input: &str) {
                 None => println!("error"),
             }
         }
-        5 =>{ match day05::get_top_crates(input) {
-            Ok(x) => println!("part 1: {}", x),
-            Err(e) => println!("{}", e),
+        5 => {
+            match day05::get_top_crates_one_at_a_time(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
+            match day05::get_top_crates_multiple_at_a_time(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
         }
-            
-        },
         6..=25 => {
             super::print_not_implemented(2022, day);
         }

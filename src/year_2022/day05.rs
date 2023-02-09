@@ -1,12 +1,24 @@
 use regex::Regex;
 use std::collections::HashMap;
 
-pub fn get_top_crates(input: &str) -> Result<String, CrateProblemError> {
+pub fn get_top_crates_one_at_a_time(input: &str) -> Result<String, CrateProblemError> {
     let mut problem = match parse_input(input) {
         Some(p) => p,
         None => return Err(CrateProblemError::Parse),
     };
-    problem.execute_instructions()?;
+    problem.execute_instructions_v9000()?;
+    match problem.get_top_string() {
+        Some(s) => Ok(s),
+        None => Err(CrateProblemError::Evaluate),
+    }
+}
+
+pub fn get_top_crates_multiple_at_a_time(input: &str) -> Result<String, CrateProblemError> {
+    let mut problem = match parse_input(input) {
+        Some(p) => p,
+        None => return Err(CrateProblemError::Parse),
+    };
+    problem.execute_instructions_v9001()?;
     match problem.get_top_string() {
         Some(s) => Ok(s),
         None => Err(CrateProblemError::Evaluate),
@@ -48,7 +60,7 @@ impl Problem {
         }))
     }
 
-    fn execute_instructions(&mut self) -> Result<(), CrateProblemError> {
+    fn execute_instructions_v9000(&mut self) -> Result<(), CrateProblemError> {
         for instruction in self.instructions.clone().iter() {
             for _i in 0..instruction.amount {
                 let source_stack = match self.stacks.get_mut(&instruction.source) {
@@ -68,6 +80,35 @@ impl Problem {
                     }
                 };
                 destination_stack.push(cr);
+            }
+        }
+        self.instructions.clear();
+        Ok(())
+    }
+    fn execute_instructions_v9001(&mut self) -> Result<(), CrateProblemError> {
+        for instruction in self.instructions.clone().iter() {
+            let mut crate_holder = Vec::new();
+            let source_stack = match self.stacks.get_mut(&instruction.source) {
+                Some(s) => s,
+                None => return Err(CrateProblemError::InstructionInvalidSource(*instruction)),
+            };
+            for _i in 0..instruction.amount {
+                let cr = match source_stack.pop() {
+                    Some(c) => c,
+                    None => return Err(CrateProblemError::InstructionInvalidAmount(*instruction)),
+                };
+                crate_holder.push(cr);
+            }
+            let destination_stack = match self.stacks.get_mut(&instruction.destination) {
+                Some(s) => s,
+                None => {
+                    return Err(CrateProblemError::InstructionInvalidDestination(
+                        *instruction,
+                    ))
+                }
+            };
+            for cr in crate_holder.iter().rev() {
+                destination_stack.push(*cr);
             }
         }
         self.instructions.clear();
@@ -176,8 +217,13 @@ move 2 from 2 to 1
 move 1 from 1 to 2";
 
     #[test]
-    fn top_crates() {
-        assert_eq!(get_top_crates(TEST_INPUT), Ok("CMZ".to_string()));
+    fn top_crates_one() {
+        assert_eq!(get_top_crates_one_at_a_time(TEST_INPUT), Ok("CMZ".to_string()));
+    }
+
+    #[test]
+    fn top_crates_multiple() {
+        assert_eq!(get_top_crates_multiple_at_a_time(TEST_INPUT), Ok("MCD".to_string()));
     }
 
     #[test]
@@ -206,7 +252,51 @@ move 1 from 1 to 2";
     }
 
     #[test]
-    fn execute() {
+    fn execute_9001() {
+        let mut p = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        p.stacks.insert(1, vec!['A', 'B', 'C']);
+        p.stacks.insert(2, vec!['D']);
+        p.stacks.insert(3, vec!['E', 'F']);
+        p.stacks.insert(4, vec!['G', 'H', 'I', 'J']);
+        let mut expected1 = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        expected1.stacks.insert(1, vec!['A', 'B', 'C']);
+        expected1.stacks.insert(2, vec!['D']);
+        expected1.stacks.insert(3, vec!['E', 'F']);
+        expected1.stacks.insert(4, vec!['G', 'H', 'I', 'J']);
+        let mut expected2 = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        expected2.stacks.insert(1, vec!['A', 'I', 'J']);
+        expected2.stacks.insert(2, vec!['D', 'B', 'C']);
+        expected2.stacks.insert(3, vec!['E', 'F']);
+        expected2.stacks.insert(4, vec!['G', 'H']);
+        p.execute_instructions_v9001().unwrap();
+        assert_eq!(p.stacks, expected1.stacks);
+        p.instructions.push(Instruction {
+            amount: 2,
+            source: 1,
+            destination: 2,
+        });
+        p.instructions.push(Instruction {
+            amount: 2,
+            source: 4,
+            destination: 1,
+        });
+        p.execute_instructions_v9001().unwrap();
+        assert_eq!(p.stacks, expected2.stacks);
+        p.execute_instructions_v9001().unwrap();
+        assert_eq!(p.stacks, expected2.stacks);
+    }
+
+    #[test]
+    fn execute_9000() {
         let mut p = Problem {
             stacks: HashMap::<i32, Vec<char>>::new(),
             instructions: Vec::<Instruction>::new(),
@@ -231,7 +321,7 @@ move 1 from 1 to 2";
         expected2.stacks.insert(2, vec!['D', 'C', 'B']);
         expected2.stacks.insert(3, vec!['E', 'F']);
         expected2.stacks.insert(4, vec!['G', 'H']);
-        p.execute_instructions().unwrap();
+        p.execute_instructions_v9000().unwrap();
         assert_eq!(p.stacks, expected1.stacks);
         p.instructions.push(Instruction {
             amount: 2,
@@ -243,9 +333,9 @@ move 1 from 1 to 2";
             source: 4,
             destination: 1,
         });
-        p.execute_instructions().unwrap();
+        p.execute_instructions_v9000().unwrap();
         assert_eq!(p.stacks, expected2.stacks);
-        p.execute_instructions().unwrap();
+        p.execute_instructions_v9000().unwrap();
         assert_eq!(p.stacks, expected2.stacks);
     }
 
