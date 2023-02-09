@@ -6,10 +6,17 @@ pub fn get_top_crates(input: &str) -> Option<String> {
     Some("".to_string())
 }
 
+#[derive(Clone,Copy)]
 struct Instruction {
     amount: i32,
     source: i32,
     destination: i32,
+}
+
+impl std::fmt::Debug for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "move {} from {} to {}", self.amount, self.source, self.destination)
+    }
 }
 
 struct Problem {
@@ -20,13 +27,56 @@ struct Problem {
 impl Problem {
     fn get_top_string(&self) -> Option<String> {
         let mut char_vector: Vec<char> = Vec::new();
-        for i in 0..self.stacks.len() {
+        // assert that stacks are labeled 1..n
+        for i in 1..self.stacks.len() + 1 {
             char_vector.push(*self.stacks.get(&(i as i32))?.last()?);
         }
+        println!("{:?}", char_vector);
         Some(char_vector.iter().fold(String::new(), |mut string, &c| {
             string.push(c);
             string
         }))
+    }
+
+    fn execute_instructions(&mut self) -> Result<(), InstructionExecutionError> {
+        for instruction in self.instructions.clone().iter() {
+            for _i in 0..instruction.amount {
+                let source_stack = match self.stacks.get_mut(&instruction.source) {
+                    Some(s) => s,
+                    None => return Err(InstructionExecutionError::InvalidSource(*instruction)),
+                };
+                let cr = match source_stack.pop() {
+                    Some(c) => c,
+                    None => return Err(InstructionExecutionError::InvalidAmount(*instruction)),
+                };
+                let destination_stack = match self.stacks.get_mut(&instruction.destination) {
+                    Some(s) => s,
+                    None => {
+                        return Err(InstructionExecutionError::InvalidDestination(*instruction))
+                    }
+                };
+                destination_stack.push(cr);
+            }
+        }
+        self.instructions.clear();
+        Ok(())
+    }
+}
+
+enum InstructionExecutionError {
+    InvalidAmount(Instruction),
+    InvalidSource(Instruction),
+    InvalidDestination(Instruction),
+}
+
+impl std::fmt::Debug for InstructionExecutionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (string, instruction) = match self {
+            InstructionExecutionError::InvalidAmount(a) => ("invalid amount", a),
+            InstructionExecutionError::InvalidSource(a) => ("invalid source",a),
+            InstructionExecutionError::InvalidDestination(a) => ("invalid destination",a),
+        };
+        write!(f, "{}: {:?}", string, instruction)
     }
 }
 
@@ -59,9 +109,9 @@ fn parse_instructions(instructions: &[&str]) -> Option<Vec<Instruction>> {
             let source = groups_iterator.next()??.as_str().parse::<i32>().ok()?;
             let destination = groups_iterator.next()??.as_str().parse::<i32>().ok()?;
             instruction_vector.push(Instruction {
-                amount: amount,
-                source: source,
-                destination: destination,
+                amount,
+                source,
+                destination,
             });
         }
     }
@@ -117,6 +167,63 @@ move 1 from 1 to 2";
         )
         .unwrap();
         assert_eq!(e.len(), 4);
+    }
+
+    #[test]
+    fn top_string() {
+        let mut p = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        p.stacks.insert(1, vec!['A', 'B', 'C']);
+        p.stacks.insert(2, vec!['D']);
+        p.stacks.insert(3, vec!['E', 'F']);
+        p.stacks.insert(4, vec!['G', 'H', 'I', 'J']);
+        assert_eq!(p.get_top_string(), Some("CDFJ".to_string()));
+    }
+
+    #[test]
+    fn execute() {
+        let mut p = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        p.stacks.insert(1, vec!['A', 'B', 'C']);
+        p.stacks.insert(2, vec!['D']);
+        p.stacks.insert(3, vec!['E', 'F']);
+        p.stacks.insert(4, vec!['G', 'H', 'I', 'J']);
+        let mut expected1 = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        expected1.stacks.insert(1, vec!['A', 'B', 'C']);
+        expected1.stacks.insert(2, vec!['D']);
+        expected1.stacks.insert(3, vec!['E', 'F']);
+        expected1.stacks.insert(4, vec!['G', 'H', 'I', 'J']);
+        let mut expected2 = Problem {
+            stacks: HashMap::<i32, Vec<char>>::new(),
+            instructions: Vec::<Instruction>::new(),
+        };
+        expected2.stacks.insert(1, vec!['A', 'J', 'I']);
+        expected2.stacks.insert(2, vec!['D', 'C', 'B']);
+        expected2.stacks.insert(3, vec!['E', 'F']);
+        expected2.stacks.insert(4, vec!['G', 'H']);
+        p.execute_instructions().unwrap();
+        assert_eq!(p.stacks, expected1.stacks);
+        p.instructions.push(Instruction {
+            amount: 2,
+            source: 1,
+            destination: 2,
+        });
+        p.instructions.push(Instruction {
+            amount: 2,
+            source: 4,
+            destination: 1,
+        });
+        p.execute_instructions().unwrap();
+        assert_eq!(p.stacks, expected2.stacks);
+        p.execute_instructions().unwrap();
+        assert_eq!(p.stacks, expected2.stacks);
     }
 
     #[test]
