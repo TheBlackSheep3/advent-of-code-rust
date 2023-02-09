@@ -25,9 +25,15 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        2 => match day02::get_rock_paper_scissors_score(input) {
-            Ok(x) => println!("part 2: {}", x.right),
-            Err(e) => println!("{}", e),
+        2 => {
+            match day02::get_rock_paper_scissors_score1(input) {
+                Ok(x) => println!("part 1: {}", x.right),
+                Err(e) => println!("{}", e),
+            }
+            match day02::get_rock_paper_scissors_score2(input) {
+                Ok(x) => println!("part 1: {}", x.right),
+                Err(e) => println!("{}", e),
+            }
         },
         3 => {
             match day03::get_priority_sum(input) {
@@ -50,7 +56,7 @@ pub fn solve(day: u8, input: &str) {
             }
         }
         5..=25 => {
-            println!("not yet implemented");
+            super::print_not_implemented(2022, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
     }
