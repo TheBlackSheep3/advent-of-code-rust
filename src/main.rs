@@ -31,9 +31,4 @@ fn main() {
             }
         }
     }
-    //let path: &Path = args.input_file.as_path();
-    //match solutions::year_2022::day04::get_overlapping_pair_count(&input) {
-    //    Some(s) => println!("the sum is {}", s),
-    //    None => println!("failed to calculate the sum"),
-    //}
 }
