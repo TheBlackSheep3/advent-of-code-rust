@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use phf::phf_map;
-
 pub fn get_start_marker(input: &str) -> Option<i32> {
     if input.len() < 4 {
         return None;
@@ -26,20 +24,30 @@ fn are_unique_chars(input: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use phf::phf_map;
     use super::*;
 
-    static SAMPE_INPUT: phf::Map<&'static str, i32> = phf_map! {
-        "mjqjpqmgbljsphdztnvjfqwrcgsmlb" => 7,
-        "bvwbjplbgvbhsrlpgdmjqwftvncz" => 5,
-        "nppdvjthqldpwncqszvftbrmjlhg" => 6,
-        "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" => 10,
-        "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" => 11,
+    static SAMPE_INPUT: phf::Map<&'static str, (i32, i32)> = phf_map! {
+        "mjqjpqmgbljsphdztnvjfqwrcgsmlb" => (7, 19),
+        "bvwbjplbgvbhsrlpgdmjqwftvncz" => (5, 23),
+        "nppdvjthqldpwncqszvftbrmjlhg" => (6, 23),
+        "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" => (10, 29),
+        "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" => (11, 26),
     };
 
     #[test]
     fn start_marker() {
         for (input, &marker) in &SAMPE_INPUT {
-            assert_eq!(get_start_marker(input), Some(marker));
+            assert_eq!(get_start_marker(input), Some(marker.0));
         }
+        assert_eq!(get_start_marker(""), None);
+        assert_eq!(get_start_marker("abcabc"), None);
+    }
+
+    #[test]
+    fn unique() {
+        assert_eq!(are_unique_chars("bbbbbb"), false);
+        assert_eq!(are_unique_chars("abcde"), true);
+        assert_eq!(are_unique_chars("56as96d"), false);
     }
 }
