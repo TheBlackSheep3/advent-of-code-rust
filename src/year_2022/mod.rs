@@ -66,9 +66,15 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        6 => match day06::get_start_marker(input) {
-            Some(x) => println!("part 1: {}", x),
-            None => println!("error"),
+        6 => {
+            match day06::get_start_package(input) {
+                Some(x) => println!("part 1: {}", x),
+                None => println!("error"),
+            }
+            match day06::get_start_message(input) {
+                Some(x) => println!("part 2: {}", x),
+                None => println!("error"),
+            }
         }
         7..=25 => {
             super::print_not_implemented(2022, day);

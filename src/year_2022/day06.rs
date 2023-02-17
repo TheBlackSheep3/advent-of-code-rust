@@ -1,15 +1,26 @@
 use std::collections::HashSet;
 
-pub fn get_start_marker(input: &str) -> Option<i32> {
-    if input.len() < 4 {
-        return None;
-    }
-    for i in 3..input.len() {
-        if are_unique_chars(&input[i - 3..=i]) {
-            return Some((i + 1) as i32);
+pub fn get_start_package(input: &str) -> Option<i32> {
+    get_position_after_n_unique_chars(input, 4)
+}
+
+pub fn get_start_message(input: &str) -> Option<i32> {
+    get_position_after_n_unique_chars(input, 14)
+}
+
+fn get_position_after_n_unique_chars(input: &str, n: usize) -> Option<i32> {
+    if n < 2 || input.len() < n {
+        None
+    } else {
+        let start = n.checked_sub(1)?;
+        for i in start..input.len() {
+            if are_unique_chars(&input[i - start..=i]) {
+                let index = i.checked_add(1)?;
+                return Some(index as i32);
+            }
         }
+        None
     }
-    None
 }
 
 fn are_unique_chars(input: &str) -> bool {
@@ -36,12 +47,21 @@ mod tests {
     };
 
     #[test]
-    fn start_marker() {
+    fn start_package() {
         for (input, &marker) in &SAMPE_INPUT {
-            assert_eq!(get_start_marker(input), Some(marker.0));
+            assert_eq!(get_start_package(input), Some(marker.0));
         }
-        assert_eq!(get_start_marker(""), None);
-        assert_eq!(get_start_marker("abcabc"), None);
+        assert_eq!(get_start_package(""), None);
+        assert_eq!(get_start_package("abcabc"), None);
+    }
+
+    #[test]
+    fn start_message() {
+        for (input, &marker) in &SAMPE_INPUT {
+            assert_eq!(get_start_message(input), Some(marker.1));
+        }
+        assert_eq!(get_start_message(""), None);
+        assert_eq!(get_start_message("abcdefghijklmabcdefghijklm"), None)
     }
 
     #[test]
