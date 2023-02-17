@@ -3,6 +3,7 @@ mod day02;
 mod day03;
 mod day04;
 mod day05;
+mod day06;
 
 pub fn get_implemented() -> Vec<&'static str> {
     vec![
@@ -61,11 +62,15 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
             match day05::get_top_crates_multiple_at_a_time(input) {
-                Ok(x) => println!("part 1: {}", x),
+                Ok(x) => println!("part 2: {}", x),
                 Err(e) => println!("{}", e),
             }
         }
-        6..=25 => {
+        6 => match day06::get_start_marker(input) {
+            Some(x) => println!("part 1: {}", x),
+            None => println!("error"),
+        }
+        7..=25 => {
             super::print_not_implemented(2022, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
