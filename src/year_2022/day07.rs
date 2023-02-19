@@ -1,3 +1,20 @@
+pub fn retrieve_deletable_dir_size(input: &str) -> Result<usize, FileStructureError> {
+    let root: Directory = parse_file_structure(input)?;
+    match root.get_sum_of_dirs_with_max_size(100_000) {
+        Some(x) => Ok(x),
+        None => Err(FileStructureError::Overflow),
+    }
+}
+
+fn parse_file_structure(input: &str) -> Result<Directory, FileStructureError> {
+    todo!()
+}
+
+pub enum FileStructureError {
+    Parse,
+    Overflow,
+}
+
 struct Directory<'a> {
     files: Vec<&'a File>,
     directories: Vec<&'a Directory<'a>>,
@@ -29,6 +46,10 @@ impl<'a> Directory<'a> {
 
     fn clear_files(&mut self) -> () {
         self.files.clear();
+    }
+
+    fn get_sum_of_dirs_with_max_size(&self, max_size: i32) -> Option<usize> {
+        todo!()
     }
 }
 
