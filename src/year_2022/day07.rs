@@ -15,13 +15,14 @@ fn parse_file_structure(input: &str) -> Result<Directory, FileStructureError> {
     }
 }
 
+#[derive(PartialEq)]
 pub enum FileStructureError<'a> {
     MissingRootDirectory,
     Parse(&'a str),
     Overflow,
 }
 
-impl<'a> std::fmt::Display for FileStructureError<'a> {
+impl<'a> std::fmt::Debug for FileStructureError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Overflow => write!(f, "integer overflow occured while calculating size"),
@@ -31,7 +32,13 @@ impl<'a> std::fmt::Display for FileStructureError<'a> {
     }
 }
 
-#[derive(Clone)]
+impl<'a> std::fmt::Display for FileStructureError<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct Directory<'a> {
     name: &'a str,
     files: Vec<File>,
@@ -92,7 +99,7 @@ impl<'a> Directory<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 struct File {
     size: usize,
 }
@@ -188,6 +195,11 @@ $ ls
         assert_eq!(dir1.get_size(), Some(1517));
         root.add_dir(dir1);
         assert_eq!(root.get_size(), Some(1517));
+    }
+
+    #[test]
+    fn parse() {
+        assert_eq!(parse_file_structure(TEST_INPUT), Ok(get_parsed_test_input()));
     }
 
     #[test]
