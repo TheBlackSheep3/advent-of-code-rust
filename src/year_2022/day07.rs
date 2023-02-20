@@ -49,7 +49,15 @@ impl<'a> Directory<'a> {
     }
 
     fn get_sum_of_dirs_with_max_size(&self, max_size: usize) -> Option<usize> {
-        todo!()
+        let mut sum: usize = 0;
+        for dir in &self.directories {
+            sum = sum.checked_add(dir.get_sum_of_dirs_with_max_size(max_size)?)?;
+        }
+        let own_size = self.get_size()?;
+        if own_size <= max_size {
+            sum = sum.checked_add(own_size)?;
+        }
+        Some(sum)
     }
 
     const fn new() -> Directory<'a> {
