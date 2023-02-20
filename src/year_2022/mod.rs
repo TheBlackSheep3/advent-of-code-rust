@@ -77,7 +77,11 @@ pub fn solve(day: u8, input: &str) {
                 None => println!("error"),
             }
         }
-        7..=25 => {
+        7 => match day07::retrieve_deletable_dir_size(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(e) => println!("{}", e),
+        }
+        8..=25 => {
             super::print_not_implemented(2022, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
