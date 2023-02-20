@@ -48,14 +48,28 @@ impl<'a> Directory<'a> {
         self.files.clear();
     }
 
-    fn get_sum_of_dirs_with_max_size(&self, max_size: i32) -> Option<usize> {
+    fn get_sum_of_dirs_with_max_size(&self, max_size: usize) -> Option<usize> {
         todo!()
+    }
+
+    const fn new() -> Directory<'a> {
+        Directory {
+            files: Vec::new(),
+            directories: Vec::new(),
+        }
     }
 }
 
 struct File {
     size: usize,
 }
+
+impl File {
+    const fn new(size: usize) -> File {
+        File { size }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,20 +100,20 @@ $ ls
 
     #[test]
     fn get_size() {
-        let mut root = Directory{files: Vec::new(), directories: Vec::new()};
-        let f = File { size: usize::MAX};
+        let mut root = Directory::new();
+        let f = File { size: usize::MAX };
         root.add_file(&f);
         assert_eq!(root.get_size(), Some(usize::MAX));
         root.add_file(&f);
         assert_eq!(root.get_size(), None);
         root.clear_files();
         assert_eq!(root.get_size(), Some(0));
-        let mut dir1 = Directory{ files:Vec::new(), directories:Vec::new()};
+        let mut dir1 = Directory::new();
         let f = File { size: 297 };
         dir1.add_file(&f);
         let f = File { size: 92 };
         dir1.add_file(&f);
-        let mut dir2 = Directory{ files:Vec::new(), directories:Vec::new()};
+        let mut dir2 = Directory::new();
         assert_eq!(dir1.get_size(), Some(389));
         let f = File { size: 201 };
         dir2.add_file(&f);
@@ -110,5 +124,41 @@ $ ls
         root.add_dir(&dir1);
         assert_eq!(dir1.get_size(), Some(1517));
         assert_eq!(root.get_size(), Some(1517));
+    }
+
+    #[test]
+    fn get_size_maxsum() {
+        const MAX_SIZE: usize = 100_000;
+        let mut e = Directory::new();
+        let i = File::new(584);
+        e.add_file(&i);
+        let mut a = Directory::new();
+        a.add_dir(&e);
+        let f = File::new(29116);
+        a.add_file(&f);
+        let g = File::new(2557);
+        a.add_file(&g);
+        let h = File::new(62596);
+        a.add_file(&h);
+        let mut d = Directory::new();
+        let j = File::new(4060174);
+        d.add_file(&j);
+        let dlog = File::new(8033020);
+        d.add_file(&dlog);
+        let dext = File::new(5626152);
+        d.add_file(&dext);
+        let k = File::new(7214296);
+        d.add_file(&k);
+        let mut root = Directory::new();
+        root.add_dir(&a);
+        root.add_dir(&d);
+        let b = File::new(14848514);
+        root.add_file(&b);
+        let c = File::new(8504156);
+        root.add_file(&c);
+        assert_eq!(e.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(584));
+        assert_eq!(a.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(95437));
+        assert_eq!(d.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(0));
+        assert_eq!(root.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(95437));
     }
 }
