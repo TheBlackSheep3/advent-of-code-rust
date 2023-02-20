@@ -16,6 +16,7 @@ pub enum FileStructureError {
 }
 
 struct Directory<'a> {
+    name: &'a str,
     files: Vec<&'a File>,
     directories: Vec<&'a Directory<'a>>,
 }
@@ -60,8 +61,9 @@ impl<'a> Directory<'a> {
         Some(sum)
     }
 
-    const fn new() -> Directory<'a> {
+    const fn new(name: &'a str) -> Directory<'a> {
         Directory {
+            name,
             files: Vec::new(),
             directories: Vec::new(),
         }
@@ -108,7 +110,7 @@ $ ls
 
     #[test]
     fn get_size() {
-        let mut root = Directory::new();
+        let mut root = Directory::new("root");
         let f = File { size: usize::MAX };
         root.add_file(&f);
         assert_eq!(root.get_size(), Some(usize::MAX));
@@ -116,12 +118,12 @@ $ ls
         assert_eq!(root.get_size(), None);
         root.clear_files();
         assert_eq!(root.get_size(), Some(0));
-        let mut dir1 = Directory::new();
+        let mut dir1 = Directory::new("1");
         let f = File { size: 297 };
         dir1.add_file(&f);
         let f = File { size: 92 };
         dir1.add_file(&f);
-        let mut dir2 = Directory::new();
+        let mut dir2 = Directory::new("2");
         assert_eq!(dir1.get_size(), Some(389));
         let f = File { size: 201 };
         dir2.add_file(&f);
@@ -137,10 +139,10 @@ $ ls
     #[test]
     fn get_size_maxsum() {
         const MAX_SIZE: usize = 100_000;
-        let mut e = Directory::new();
+        let mut e = Directory::new("e");
         let i = File::new(584);
         e.add_file(&i);
-        let mut a = Directory::new();
+        let mut a = Directory::new("a");
         a.add_dir(&e);
         let f = File::new(29116);
         a.add_file(&f);
@@ -148,7 +150,7 @@ $ ls
         a.add_file(&g);
         let h = File::new(62596);
         a.add_file(&h);
-        let mut d = Directory::new();
+        let mut d = Directory::new("j");
         let j = File::new(4060174);
         d.add_file(&j);
         let dlog = File::new(8033020);
@@ -157,7 +159,7 @@ $ ls
         d.add_file(&dext);
         let k = File::new(7214296);
         d.add_file(&k);
-        let mut root = Directory::new();
+        let mut root = Directory::new("/");
         root.add_dir(&a);
         root.add_dir(&d);
         let b = File::new(14848514);
