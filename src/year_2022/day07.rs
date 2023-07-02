@@ -1,3 +1,6 @@
+
+use regex::Regex;
+
 pub fn retrieve_deletable_dir_size(input: &str) -> Result<usize, FileStructureError> {
     let root: Directory = parse_file_structure(input)?;
     match root.get_sum_of_dirs_with_max_size(100_000) {
@@ -7,8 +10,34 @@ pub fn retrieve_deletable_dir_size(input: &str) -> Result<usize, FileStructureEr
 }
 
 fn parse_file_structure(input: &str) -> Result<Directory, FileStructureError> {
+    let directory_up_regex = Regex::new(r"\$ cd ..").unwrap();
+    let change_directory_regex = Regex::new(r"\$ cd ([\w/]+)").unwrap();
+    let file_regex = Regex::new(r"(\d+) [\w.]+").unwrap();
     let mut directory_stack: Vec<Directory> = Vec::new();
-    for line in input.lines() {}
+    for line in input.lines() {
+        if directory_up_regex.is_match(line) {
+            directory_stack.pop();
+        } else if let Some(caps) = change_directory_regex.captures(line) {
+            match caps.get(1) {
+                None => return Err(FileStructureError::Parse(line)),
+                Some(m) => {
+                    let dir = Directory::new(m.as_str());
+                    directory_stack.push(dir.clone());
+                    if let Some(parent) = directory_stack.last_mut() {
+                        parent.add_dir(dir.clone());
+                    }
+                },
+            }
+        } else if let Some(caps) = file_regex.captures(line) {
+            match caps.get(1) {
+                None => return Err(FileStructureError::Parse(line)),
+                Some(size) => match directory_stack.last_mut(){
+                    None => return Err(FileStructureError::MissingRootDirectory),
+                    Some(dir) => dir.add_file(File { size: usize::from_str_radix(size.as_str(), 10).unwrap() }),
+                },
+            }
+        }
+    }
     match directory_stack.first() {
         Some(dir) => Ok(dir.clone()),
         None => Err(FileStructureError::MissingRootDirectory),
