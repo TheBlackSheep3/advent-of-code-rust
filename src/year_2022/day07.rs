@@ -1,4 +1,3 @@
-
 use regex::Regex;
 
 pub fn retrieve_deletable_dir_size(input: &str) -> Result<usize, FileStructureError> {
@@ -26,14 +25,16 @@ fn parse_file_structure(input: &str) -> Result<Directory, FileStructureError> {
                     if let Some(parent) = directory_stack.last_mut() {
                         parent.add_dir(dir.clone());
                     }
-                },
+                }
             }
         } else if let Some(caps) = file_regex.captures(line) {
             match caps.get(1) {
                 None => return Err(FileStructureError::Parse(line)),
-                Some(size) => match directory_stack.last_mut(){
+                Some(size) => match directory_stack.last_mut() {
                     None => return Err(FileStructureError::MissingRootDirectory),
-                    Some(dir) => dir.add_file(File { size: usize::from_str_radix(size.as_str(), 10).unwrap() }),
+                    Some(dir) => dir.add_file(File {
+                        size: usize::from_str_radix(size.as_str(), 10).unwrap(),
+                    }),
                 },
             }
         }
@@ -86,19 +87,19 @@ impl<'a> Directory<'a> {
         Some(sum)
     }
 
-    fn add_dir(&mut self, dir: Directory<'a>) -> () {
+    fn add_dir(&mut self, dir: Directory<'a>) {
         self.directories.push(dir);
     }
 
-    fn clear_dirs(&mut self) -> () {
+    fn clear_dirs(&mut self) {
         self.directories.clear();
     }
 
-    fn add_file(&mut self, file: File) -> () {
+    fn add_file(&mut self, file: File) {
         self.files.push(file);
     }
 
-    fn clear_files(&mut self) -> () {
+    fn clear_files(&mut self) {
         self.files.clear();
     }
 
@@ -228,7 +229,10 @@ $ ls
 
     #[test]
     fn parse() {
-        assert_eq!(parse_file_structure(TEST_INPUT), Ok(get_parsed_test_input()));
+        assert_eq!(
+            parse_file_structure(TEST_INPUT),
+            Ok(get_parsed_test_input())
+        );
     }
 
     #[test]

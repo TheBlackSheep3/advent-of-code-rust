@@ -61,30 +61,30 @@ fn parse_choices1(
 ) -> Result<(RockPaperScissorsChoice, RockPaperScissorsChoice), ParseRockPaperScissorsError> {
     let mut iterator = line.split_whitespace();
     let left: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError { line: line }),
+        None => return Err(ParseRockPaperScissorsError { line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError { line: line });
+                return Err(ParseRockPaperScissorsError { line });
             }
-            match string.chars().nth(0) {
+            match string.chars().next() {
                 Some('A') => RockPaperScissorsChoice::Rock,
                 Some('B') => RockPaperScissorsChoice::Paper,
                 Some('C') => RockPaperScissorsChoice::Scissors,
-                _ => return Err(ParseRockPaperScissorsError { line: line }),
+                _ => return Err(ParseRockPaperScissorsError { line }),
             }
         }
     };
     let right: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError { line: line }),
+        None => return Err(ParseRockPaperScissorsError { line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError { line: line });
+                return Err(ParseRockPaperScissorsError { line });
             }
-            match string.chars().nth(0) {
+            match string.chars().next() {
                 Some('X') => RockPaperScissorsChoice::Rock,
                 Some('Y') => RockPaperScissorsChoice::Paper,
                 Some('Z') => RockPaperScissorsChoice::Scissors,
-                _ => return Err(ParseRockPaperScissorsError { line: line }),
+                _ => return Err(ParseRockPaperScissorsError { line }),
             }
         }
     };
@@ -96,26 +96,26 @@ fn parse_choices2(
 ) -> Result<(RockPaperScissorsChoice, RockPaperScissorsChoice), ParseRockPaperScissorsError> {
     let mut iterator = line.split_whitespace();
     let left: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError { line: line }),
+        None => return Err(ParseRockPaperScissorsError { line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError { line: line });
+                return Err(ParseRockPaperScissorsError { line });
             }
-            match string.chars().nth(0) {
+            match string.chars().next() {
                 Some('A') => RockPaperScissorsChoice::Rock,
                 Some('B') => RockPaperScissorsChoice::Paper,
                 Some('C') => RockPaperScissorsChoice::Scissors,
-                _ => return Err(ParseRockPaperScissorsError { line: line }),
+                _ => return Err(ParseRockPaperScissorsError { line }),
             }
         }
     };
     let right: RockPaperScissorsChoice = match iterator.next() {
-        None => return Err(ParseRockPaperScissorsError { line: line }),
+        None => return Err(ParseRockPaperScissorsError { line }),
         Some(string) => {
             if string.len() != 1 {
-                return Err(ParseRockPaperScissorsError { line: line });
+                return Err(ParseRockPaperScissorsError { line });
             }
-            match string.chars().nth(0) {
+            match string.chars().next() {
                 Some('X') => match &left {
                     RockPaperScissorsChoice::Rock => RockPaperScissorsChoice::Scissors,
                     RockPaperScissorsChoice::Paper => RockPaperScissorsChoice::Rock,
@@ -127,7 +127,7 @@ fn parse_choices2(
                     RockPaperScissorsChoice::Paper => RockPaperScissorsChoice::Scissors,
                     RockPaperScissorsChoice::Scissors => RockPaperScissorsChoice::Rock,
                 },
-                _ => return Err(ParseRockPaperScissorsError { line: line }),
+                _ => return Err(ParseRockPaperScissorsError { line }),
             }
         }
     };
@@ -203,8 +203,7 @@ mod tests {
     fn parse_error1() {
         let error = match get_rock_paper_scissors_score1(FAULTY_STR1) {
             Ok(_) => {
-                assert!(false, "this method should return a parsing error");
-                return;
+                panic!("this method should return a parsing error");
             }
             Err(e) => e,
         };
@@ -215,8 +214,7 @@ mod tests {
     fn parse_error2() {
         let error = match get_rock_paper_scissors_score2(FAULTY_STR1) {
             Ok(_) => {
-                assert!(false, "this method should return a parsing error");
-                return;
+                panic!("this method should return a parsing error");
             }
             Err(e) => e,
         };
@@ -227,14 +225,14 @@ mod tests {
     fn correct_parse1() {
         assert_eq!(
             parse_choices1("A X").unwrap(),
-            (
-                RockPaperScissorsChoice::Rock,
-                RockPaperScissorsChoice::Rock
-            )
+            (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock)
         );
         assert_eq!(
             parse_choices1("A Y").unwrap(),
-            (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Paper)
+            (
+                RockPaperScissorsChoice::Rock,
+                RockPaperScissorsChoice::Paper
+            )
         );
         assert_eq!(
             parse_choices1("A Z").unwrap(),

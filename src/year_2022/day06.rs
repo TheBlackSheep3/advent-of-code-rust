@@ -35,8 +35,8 @@ fn are_unique_chars(input: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use phf::phf_map;
     use super::*;
+    use phf::phf_map;
 
     static SAMPE_INPUT: phf::Map<&'static str, (i32, i32)> = phf_map! {
         "mjqjpqmgbljsphdztnvjfqwrcgsmlb" => (7, 19),
@@ -66,8 +66,8 @@ mod tests {
 
     #[test]
     fn unique() {
-        assert_eq!(are_unique_chars("bbbbbb"), false);
-        assert_eq!(are_unique_chars("abcde"), true);
-        assert_eq!(are_unique_chars("56as96d"), false);
+        assert!(!are_unique_chars("bbbbbb"));
+        assert!(are_unique_chars("abcde"));
+        assert!(!are_unique_chars("56as96d"));
     }
 }

@@ -218,12 +218,18 @@ move 1 from 1 to 2";
 
     #[test]
     fn top_crates_one() {
-        assert_eq!(get_top_crates_one_at_a_time(TEST_INPUT), Ok("CMZ".to_string()));
+        assert_eq!(
+            get_top_crates_one_at_a_time(TEST_INPUT),
+            Ok("CMZ".to_string())
+        );
     }
 
     #[test]
     fn top_crates_multiple() {
-        assert_eq!(get_top_crates_multiple_at_a_time(TEST_INPUT), Ok("MCD".to_string()));
+        assert_eq!(
+            get_top_crates_multiple_at_a_time(TEST_INPUT),
+            Ok("MCD".to_string())
+        );
     }
 
     #[test]

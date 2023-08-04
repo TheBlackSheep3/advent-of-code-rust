@@ -36,23 +36,13 @@ fn parse_ranges(line: &str) -> Option<(RangeInclusive<i32>, RangeInclusive<i32>)
 }
 
 fn is_range_contained(first: RangeInclusive<i32>, second: RangeInclusive<i32>) -> bool {
-    if first.contains(second.start()) && first.contains(second.end()) {
-        true
-    } else if second.contains(first.start()) && second.contains(first.end()) {
-        true
-    } else {
-        false
-    }
+    (first.contains(second.start()) && first.contains(second.end()))
+        || (second.contains(first.start()) && second.contains(first.end()))
 }
 
 fn is_range_overlapping(first: RangeInclusive<i32>, second: RangeInclusive<i32>) -> bool {
-    if first.contains(second.start()) || first.contains(second.end()) {
-        true
-    } else if second.contains(first.start()) || second.contains(first.end()) {
-        true
-    } else {
-        false
-    }
+    (first.contains(second.start()) || first.contains(second.end()))
+        || (second.contains(first.start()) || second.contains(first.end()))
 }
 
 #[cfg(test)]

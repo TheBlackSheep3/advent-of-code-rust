@@ -29,7 +29,7 @@ pub fn get_badge_sum(input: &str) -> Option<i32> {
 }
 
 fn get_batch_type(group: &[&str]) -> Option<char> {
-    let one = group.get(0).unwrap();
+    let one = group.first().unwrap();
     let two = group.get(1).unwrap();
     let three = group.get(2).unwrap();
     for c in one.chars() {

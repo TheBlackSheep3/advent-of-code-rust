@@ -12,16 +12,14 @@ pub fn get_top_n_calorie_sum(calorie_str: &str, n: usize) -> Result<i32, ParseIn
         current += line.parse::<i32>()?;
     }
     swap_highest(current, &mut highest);
-    Ok(highest.iter().fold(0, |acc, value| acc + value))
+    Ok(highest.iter().sum())
 }
 
 fn swap_highest(curr: i32, highest: &mut Vec<i32>) {
     let mut current = curr;
     for val in highest {
         if *val < current {
-            let tmp = *val;
-            *val = current;
-            current = tmp;
+            std::mem::swap(val, &mut current)
         }
     }
 }
@@ -74,11 +72,11 @@ x
     #[test]
     fn parse_error() {
         match get_highest_calories(FAULTY_STR) {
-            Ok(_) => assert!(false, "this method should return a parsing error"),
+            Ok(_) => panic!("this method should return a parsing error"),
             Err(e) => assert_eq!(get_typename_of(&e), std::any::type_name::<ParseIntError>()),
         }
         match get_top_n_calorie_sum(FAULTY_STR, 3) {
-            Ok(_) => assert!(false, "this method should return a parsing error"),
+            Ok(_) => panic!("this method should return a parsing error"),
             Err(e) => assert_eq!(get_typename_of(&e), std::any::type_name::<ParseIntError>()),
         }
     }
