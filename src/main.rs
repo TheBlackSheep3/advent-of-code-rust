@@ -27,6 +27,7 @@ fn main() {
                 2020 => solutions::year_2020::solve(challenge.day, &input),
                 2021 => solutions::year_2021::solve(challenge.day, &input),
                 2022 => solutions::year_2022::solve(challenge.day, &input),
+                2023 => solutions::year_2023::solve(challenge.day, &input),
                 _ => println!("no challenge available for {}", challenge.year),
             }
         }
