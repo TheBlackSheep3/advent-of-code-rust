@@ -6,6 +6,7 @@ pub mod year_2019;
 pub mod year_2020;
 pub mod year_2021;
 pub mod year_2022;
+pub mod year_2023;
 
 pub fn print_implemented() {
     print_implemented_year("2015", year_2015::get_implemented());
@@ -16,6 +17,7 @@ pub fn print_implemented() {
     print_implemented_year("2020", year_2020::get_implemented());
     print_implemented_year("2021", year_2021::get_implemented());
     print_implemented_year("2022", year_2022::get_implemented());
+    print_implemented_year("2023", year_2023::get_implemented());
 }
 
 fn print_implemented_year(year: &str, implemented_challenges: Vec<&str>) {
