@@ -27,13 +27,18 @@ pub fn get_list_difference(list_input: &str) -> Result<u32, ParseIntError> {
     left_list.sort();
     right_list.sort();
 
-    Ok(left_list.iter().zip(right_list.iter()).fold(0u32, |acc, (l, r)| acc + l.abs_diff(*r)))
+    Ok(left_list
+        .iter()
+        .zip(right_list.iter())
+        .fold(0u32, |acc, (l, r)| acc + l.abs_diff(*r)))
 }
 
 pub fn get_list_similarity_score(list_input: &str) -> Result<u32, ParseIntError> {
     let (left_list, right_list) = parse_lists(list_input)?;
-    
-    Ok(left_list.iter().fold(0u32, |acc, i| acc + (*i * u32::try_from(right_list.iter().filter(|r| *r == i).count()).unwrap())))
+
+    Ok(left_list.iter().fold(0u32, |acc, i| {
+        acc + (*i * u32::try_from(right_list.iter().filter(|r| *r == i).count()).unwrap())
+    }))
 }
 
 #[cfg(test)]
