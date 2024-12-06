@@ -44,10 +44,16 @@ pub fn solve(day: u8, input: &str) {
                 None => println!("unabale to parse string and execute multiplications"),
             }
         }
-        4 => match day04::get_xmas_count(input) {
-            Ok(x) => println!("part 1: {}", x),
-            Err(_) => println!("an error occurred"),
-        },
+        4 => {
+            match day04::get_xmas_count(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(_) => println!("an error occurred"),
+            }
+            match day04::get_crossed_mas_count(input) {
+                Ok(x) => println!("part 2: {}", x),
+                Err(_) => println!("an error occurred"),
+            }
+        }
         5..25 => {
             super::print_not_implemented(2024, day);
         }
