@@ -42,9 +42,12 @@ pub fn parse_and_execute_multiplication_with_conditionals(instructions: &str) ->
         if enabled {
             match &instructions[start_index..].find(DONT_STR) {
                 Some(x) => end_index = *x + DONT_STR.len() + start_index,
-                None => {},
+                None => {}
             }
-            result = match (result, parse_and_execute_multiplication(&instructions[start_index..end_index])) {
+            result = match (
+                result,
+                parse_and_execute_multiplication(&instructions[start_index..end_index]),
+            ) {
                 (Some(x), Some(y)) => x.checked_add(y),
                 (None, Some(y)) => Some(y),
                 (Some(x), None) => Some(x),

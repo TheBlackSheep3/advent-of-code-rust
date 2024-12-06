@@ -1,12 +1,14 @@
 mod day01;
 mod day02;
 mod day03;
+mod day04;
 
 pub fn get_implemented() -> Vec<&'static str> {
     vec![
         "Day 1: Historian Hysteria",
         "Day 2: Red-Nosed Reports",
         "Day 3: Mull It Over",
+        "Day 4: Ceres Search",
     ]
 }
 
@@ -42,7 +44,11 @@ pub fn solve(day: u8, input: &str) {
                 None => println!("unabale to parse string and execute multiplications"),
             }
         }
-        4..25 => {
+        4 => match day04::get_xmas_count(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(_) => println!("an error occurred"),
+        },
+        5..25 => {
             super::print_not_implemented(2024, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
