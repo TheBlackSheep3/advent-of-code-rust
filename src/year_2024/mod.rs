@@ -2,6 +2,7 @@ mod day01;
 mod day02;
 mod day03;
 mod day04;
+mod day05;
 
 pub fn get_implemented() -> Vec<&'static str> {
     vec![
@@ -9,6 +10,7 @@ pub fn get_implemented() -> Vec<&'static str> {
         "Day 2: Red-Nosed Reports",
         "Day 3: Mull It Over",
         "Day 4: Ceres Search",
+        "Day 5: Print Queue",
     ]
 }
 
@@ -54,7 +56,8 @@ pub fn solve(day: u8, input: &str) {
                 Err(_) => println!("an error occurred"),
             }
         }
-        5..25 => {
+        5 => todo!(),
+        6..25 => {
             super::print_not_implemented(2024, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
