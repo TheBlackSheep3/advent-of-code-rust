@@ -1,6 +1,9 @@
 #[derive(Debug, PartialEq)]
 pub enum Error {
     OrderingRuleParsingFailed,
+    InvalidOrderingRule,
+    PrintOrderParsingFailed,
+    InvalidPrintOrder,
 }
 
 #[derive(Debug, PartialEq)]
@@ -33,7 +36,7 @@ impl TryFrom<&str> for OrderingRule {
                     .parse::<u32>()
                     .map_err(|_| Error::OrderingRuleParsingFailed)?;
                 if p1 == p2 {
-                    Err(Error::OrderingRuleParsingFailed)
+                    Err(Error::InvalidOrderingRule)
                 } else {
                     Ok(OrderingRule {
                         first: p1,
@@ -43,6 +46,23 @@ impl TryFrom<&str> for OrderingRule {
             }
             None => Err(Error::OrderingRuleParsingFailed),
         }
+    }
+}
+
+fn parse_print_order(order_str: &str) -> Result<Vec<u32>, Error> {
+    let x: Vec<Option<u32>> = order_str
+        .split(',')
+        .into_iter()
+        .map(|item| item.parse::<u32>().ok())
+        .collect();
+    if x.iter().all(|item| item.is_some()) {
+        if x.len() % 2 == 1 && x.len() == x.iter().collect::<std::collections::HashSet<_>>().len() {
+            Ok(x.iter().map(|item| item.unwrap()).collect())
+        } else {
+            Err(Error::InvalidPrintOrder)
+        }
+    } else {
+        Err(Error::PrintOrderParsingFailed)
     }
 }
 
@@ -125,7 +145,7 @@ mod tests {
         );
         assert_eq!(
             OrderingRule::try_from("2|2"),
-            Err(Error::OrderingRuleParsingFailed)
+            Err(Error::InvalidOrderingRule)
         );
         assert_eq!(
             OrderingRule::try_from("123"),
@@ -139,5 +159,24 @@ mod tests {
             OrderingRule::try_from("|123"),
             Err(Error::OrderingRuleParsingFailed)
         );
+    }
+
+    #[test]
+    fn parse_order() {
+        assert_eq!(parse_print_order("11,2,4"), Ok(vec![11u32, 2u32, 4u32]));
+        assert_eq!(
+            parse_print_order("32,11,2,8,4"),
+            Ok(vec![32u32, 11u32, 2u32, 8u32, 4u32])
+        );
+        assert_eq!(
+            parse_print_order("12,3,4,"),
+            Err(Error::PrintOrderParsingFailed)
+        );
+        assert_eq!(
+            parse_print_order(",12,3,4"),
+            Err(Error::PrintOrderParsingFailed)
+        );
+        assert_eq!(parse_print_order("8,12,3,4"), Err(Error::InvalidPrintOrder));
+        assert_eq!(parse_print_order("8,4,4"), Err(Error::InvalidPrintOrder));
     }
 }
