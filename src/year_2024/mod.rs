@@ -56,7 +56,10 @@ pub fn solve(day: u8, input: &str) {
                 Err(_) => println!("an error occurred"),
             }
         }
-        5 => todo!(),
+        5 => match day05::sum_middle_page_numbers_of_valid_print_orders(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(e) => println!("{}", e),
+        },
         6..25 => {
             super::print_not_implemented(2024, day);
         }

@@ -1,9 +1,24 @@
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
     OrderingRuleParsingFailed,
     InvalidOrderingRule,
     PrintOrderParsingFailed,
     InvalidPrintOrder,
+    InputSplitFailed,
+    IntOverflow,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::IntOverflow => write!(f, "an integer overflow occurred"),
+            Error::InputSplitFailed => write!(f, "unable to split input correctly"),
+            Error::InvalidPrintOrder => write!(f, "encountered invalid print order"),
+            Error::InvalidOrderingRule => write!(f, "encountered invalid ordering rule"),
+            Error::PrintOrderParsingFailed => write!(f, "unable to parse print order"),
+            Error::OrderingRuleParsingFailed => write!(f, "unable to parse ordering rule"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -19,7 +34,6 @@ impl OrderingRule {
             print_order.iter().position(|&i| i == self.second),
         ) {
             (Some(index1), Some(index2)) => {
-                println!("first index: {}, second index: {}", index1, index2);
                 index1 < index2
             }
             _ => true,
@@ -75,13 +89,57 @@ fn parse_print_order(order_str: &str) -> Result<Vec<u32>, Error> {
     }
 }
 
-pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> u32 {
-    let mut x: OrderingRule = OrderingRule {
-        first: 1,
-        second: 2,
-    };
-    x.is_satisfied(&vec![]);
-    0
+pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32, Error> {
+    let lines = input.lines().collect::<Vec<&str>>();
+    let pivot_line_index = lines
+        .iter()
+        .position(|l| l.is_empty())
+        .ok_or_else(|| Error::InputSplitFailed)?;
+    let rules = lines[..pivot_line_index]
+        .iter()
+        .map(|&line| line.try_into())
+        .collect::<Vec<Result<OrderingRule, Error>>>();
+    let rules: Vec<&OrderingRule> = if rules.iter().all(|x| x.is_ok()) {
+        Ok(rules
+            .iter()
+            .map(|x| x.as_ref().unwrap())
+            .collect::<Vec<&OrderingRule>>())
+    } else {
+        Err(*rules
+            .iter()
+            .find(|&x| x.is_err())
+            .unwrap()
+            .as_ref()
+            .unwrap_err())
+    }?;
+    let orders = lines[pivot_line_index + 1..]
+        .iter()
+        .map(|&line| parse_print_order(line))
+        .collect::<Vec<Result<Vec<u32>, Error>>>();
+    let orders = if orders.iter().all(|x| x.is_ok()) {
+        Ok(orders
+            .iter()
+            .map(|x| x.as_ref().unwrap())
+            .collect::<Vec<&Vec<u32>>>())
+    } else {
+        Err(*orders
+            .iter()
+            .find(|&x| x.is_err())
+            .unwrap()
+            .as_ref()
+            .unwrap_err())
+    }?;
+    orders
+        .iter()
+        .filter(|&o| rules.iter().all(|&r| r.is_satisfied(o)))
+        .fold(Some(0u32), |acc, o| match acc {
+            Some(x) => {
+                let middle_index = o.len() / 2usize;
+                x.checked_add(o[middle_index])
+            }
+            _ => None,
+        })
+        .ok_or(Error::IntOverflow)
 }
 
 #[cfg(test)]
@@ -119,7 +177,10 @@ mod tests {
 
     #[test]
     fn sum() {
-        assert_eq!(sum_middle_page_numbers_of_valid_print_orders(TEST_STR), 143)
+        assert_eq!(
+            sum_middle_page_numbers_of_valid_print_orders(TEST_STR),
+            Ok(143)
+        )
     }
 
     #[test]
