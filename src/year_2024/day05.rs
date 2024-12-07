@@ -13,8 +13,17 @@ struct OrderingRule {
 }
 
 impl OrderingRule {
-    fn is_satisfied(self, print_order: &Vec<u32>) -> bool {
-        false
+    fn is_satisfied(&self, print_order: &Vec<u32>) -> bool {
+        match (
+            print_order.iter().position(|&i| i == self.first),
+            print_order.iter().position(|&i| i == self.second),
+        ) {
+            (Some(index1), Some(index2)) => {
+                println!("first index: {}, second index: {}", index1, index2);
+                index1 < index2
+            }
+            _ => true,
+        }
     }
 }
 
@@ -159,6 +168,20 @@ mod tests {
             OrderingRule::try_from("|123"),
             Err(Error::OrderingRuleParsingFailed)
         );
+    }
+
+    #[test]
+    fn check_rule() {
+        let rule = OrderingRule {
+            first: 1u32,
+            second: 2u32,
+        };
+        assert!(rule.is_satisfied(&vec![1u32, 2u32, 3u32]));
+        assert!(rule.is_satisfied(&vec![1u32, 3u32, 2u32]));
+        assert!(rule.is_satisfied(&vec![3u32, 2u32]));
+        assert!(rule.is_satisfied(&vec![1u32, 3u32]));
+        assert!(!rule.is_satisfied(&vec![2u32, 1u32, 3u32]));
+        assert!(!rule.is_satisfied(&vec![2u32, 3u32, 1u32]));
     }
 
     #[test]
