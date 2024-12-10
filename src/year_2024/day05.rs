@@ -6,6 +6,7 @@ pub enum Error {
     InvalidPrintOrder,
     InputSplitFailed,
     IntOverflow,
+    OrderFixFailed,
 }
 
 impl std::fmt::Display for Error {
@@ -17,6 +18,7 @@ impl std::fmt::Display for Error {
             Error::InvalidOrderingRule => write!(f, "encountered invalid ordering rule"),
             Error::PrintOrderParsingFailed => write!(f, "unable to parse print order"),
             Error::OrderingRuleParsingFailed => write!(f, "unable to parse ordering rule"),
+            Error::OrderFixFailed => write!(f, "unable to fix print order"),
         }
     }
 }
@@ -27,15 +29,19 @@ struct OrderingRule {
     second: u32,
 }
 
+impl std::fmt::Display for OrderingRule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} before {}", self.first, self.second)
+    }
+}
+
 impl OrderingRule {
     fn is_satisfied(&self, print_order: &Vec<u32>) -> bool {
         match (
             print_order.iter().position(|&i| i == self.first),
             print_order.iter().position(|&i| i == self.second),
         ) {
-            (Some(index1), Some(index2)) => {
-                index1 < index2
-            }
+            (Some(index1), Some(index2)) => index1 < index2,
             _ => true,
         }
     }
@@ -89,7 +95,7 @@ fn parse_print_order(order_str: &str) -> Result<Vec<u32>, Error> {
     }
 }
 
-pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32, Error> {
+fn parse_input(input: &str) -> Result<(Vec<OrderingRule>, Vec<Vec<u32>>), Error> {
     let lines = input.lines().collect::<Vec<&str>>();
     let pivot_line_index = lines
         .iter()
@@ -99,11 +105,11 @@ pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32,
         .iter()
         .map(|&line| line.try_into())
         .collect::<Vec<Result<OrderingRule, Error>>>();
-    let rules: Vec<&OrderingRule> = if rules.iter().all(|x| x.is_ok()) {
+    let rules = if rules.iter().all(|x| x.is_ok()) {
         Ok(rules
-            .iter()
-            .map(|x| x.as_ref().unwrap())
-            .collect::<Vec<&OrderingRule>>())
+            .into_iter()
+            .map(|x| x.unwrap())
+            .collect::<Vec<OrderingRule>>())
     } else {
         Err(*rules
             .iter()
@@ -118,9 +124,9 @@ pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32,
         .collect::<Vec<Result<Vec<u32>, Error>>>();
     let orders = if orders.iter().all(|x| x.is_ok()) {
         Ok(orders
-            .iter()
-            .map(|x| x.as_ref().unwrap())
-            .collect::<Vec<&Vec<u32>>>())
+            .into_iter()
+            .map(|x| x.unwrap())
+            .collect::<Vec<Vec<u32>>>())
     } else {
         Err(*orders
             .iter()
@@ -129,9 +135,14 @@ pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32,
             .as_ref()
             .unwrap_err())
     }?;
+    Ok((rules, orders))
+}
+
+pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32, Error> {
+    let (rules, orders) = parse_input(input)?;
     orders
         .iter()
-        .filter(|&o| rules.iter().all(|&r| r.is_satisfied(o)))
+        .filter(|&o| rules.iter().all(|r| r.is_satisfied(o)))
         .fold(Some(0u32), |acc, o| match acc {
             Some(x) => {
                 let middle_index = o.len() / 2usize;
@@ -140,6 +151,44 @@ pub fn sum_middle_page_numbers_of_valid_print_orders(input: &str) -> Result<u32,
             _ => None,
         })
         .ok_or(Error::IntOverflow)
+}
+
+fn fix_order(order: &Vec<u32>, rules: &Vec<OrderingRule>) -> Option<Vec<u32>> {
+    let mut order: Vec<u32> = order.clone();
+    let mut iterations: usize = 0usize;
+    while rules.iter().any(|r| !r.is_satisfied(&order)) {
+        if iterations > 1 << 10 {
+            return None;
+        }
+        let mut fixed = order.clone();
+        for rule in rules.iter().filter(|r| !r.is_satisfied(&order)) {
+            fixed.swap(
+                order.iter().position(|&i| i == rule.first).unwrap(),
+                order.iter().position(|&i| i == rule.second).unwrap(),
+            );
+            if rules.iter().all(|r| r.is_satisfied(&order)) {
+                break;
+            }
+        }
+        order = fixed;
+        iterations += 1;
+    }
+    Some(order)
+}
+
+pub fn sum_middle_page_numbers_of_fixed_invalid_print_orders(input: &str) -> Result<u32, Error> {
+    let (rules, orders) = parse_input(input)?;
+    orders
+        .iter()
+        .filter(|&o| rules.iter().any(|r| !r.is_satisfied(o)))
+        .fold(Ok(0u32), |acc, o| match acc {
+            Ok(x) => {
+                let fixed = fix_order(o, &rules).ok_or(Error::OrderFixFailed)?;
+                let middle_index = o.len() / 2usize;
+                x.checked_add(fixed[middle_index]).ok_or(Error::IntOverflow)
+            }
+            e => e,
+        })
 }
 
 #[cfg(test)]
@@ -181,6 +230,31 @@ mod tests {
             sum_middle_page_numbers_of_valid_print_orders(TEST_STR),
             Ok(143)
         )
+    }
+
+    #[test]
+    fn fix_orders() {
+        let (rules, _) = parse_input(TEST_STR).unwrap();
+        assert_eq!(
+            fix_order(&vec![75u32, 97u32, 47u32, 61u32, 53u32], &rules),
+            Some(vec![97u32, 75u32, 47u32, 61u32, 53u32])
+        );
+        assert_eq!(
+            fix_order(&vec![61u32, 13u32, 29u32], &rules),
+            Some(vec![61u32, 29u32, 13u32])
+        );
+        assert_eq!(
+            fix_order(&vec![97u32, 13u32, 75u32, 29u32, 47u32], &rules),
+            Some(vec![97u32, 75u32, 47u32, 29u32, 13u32])
+        );
+    }
+
+    #[test]
+    fn sum_fixed_orders() {
+        assert_eq!(
+            sum_middle_page_numbers_of_fixed_invalid_print_orders(TEST_STR),
+            Ok(123)
+        );
     }
 
     #[test]
