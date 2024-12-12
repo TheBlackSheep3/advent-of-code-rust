@@ -1,20 +1,27 @@
-use core::panic;
 use std::collections::HashSet;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
     MapParsingFailed,
+    Threading,
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::MapParsingFailed => write!(f, "failed to parse map"),
+            Error::Threading => write!(f, "error joining a thread"),
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+impl std::convert::From<std::boxed::Box<dyn std::any::Any + std::marker::Send>> for Error {
+    fn from(_value: std::boxed::Box<dyn std::any::Any + std::marker::Send>) -> Self {
+        Error::Threading
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum GuardOrientation {
     Up,
     Right,
@@ -55,7 +62,7 @@ impl Guard {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct Map {
     guard: Option<Guard>,
     size: (usize, usize),
@@ -166,6 +173,18 @@ impl Iterator for Map {
     }
 }
 
+impl Map {
+    fn loops(&mut self) -> bool {
+        let mut visited: HashSet<(usize, usize, GuardOrientation)> = HashSet::<_>::new();
+        for x in self.into_iter() {
+            if !visited.insert(x) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 pub fn count_positions(input: &str) -> Result<usize, Error> {
     let x: Map = input.try_into()?;
     Ok(x.into_iter()
@@ -174,6 +193,68 @@ pub fn count_positions(input: &str) -> Result<usize, Error> {
         .into_iter()
         .collect::<HashSet<(usize, usize)>>()
         .len())
+}
+
+fn loop_check_thread_proc(map: &Map, possible_positions: &[(usize, usize)]) -> usize {
+    let mut count = 0usize;
+    for p in possible_positions {
+        let mut map = map.clone();
+        if !map.obstacles.insert(*p) {
+            panic!("obstacle already present");
+        }
+        if map.loops() {
+            count += 1;
+        }
+    }
+    count
+}
+
+pub fn count_loop_positions(input: &str) -> Result<usize, Error> {
+    let map: Map = input.try_into()?;
+    let possible_positions: Vec<(usize, usize)> = map
+        .clone()
+        .into_iter()
+        .map(|(x, y, _)| (x, y))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    Ok(
+        match std::thread::available_parallelism()
+            .ok()
+            .filter(|x| x.get() > 1usize)
+        {
+            None => loop_check_thread_proc(&map, &possible_positions),
+            Some(thread_count) => {
+                let thread_count = thread_count.get();
+                let map: std::sync::Arc<Map> = std::sync::Arc::new(map);
+                let possible_positions: std::sync::Arc<Vec<(usize, usize)>> =
+                    std::sync::Arc::new(possible_positions);
+                let mut position_count: usize;
+                let step_size: usize = possible_positions.len() / thread_count;
+                let mut threads: Vec<std::thread::JoinHandle<usize>> = vec![];
+                for i in 0..thread_count - 1 {
+                    let map = map.clone();
+                    let possible_positions = possible_positions.clone();
+                    threads.push(std::thread::spawn(move || {
+                        loop_check_thread_proc(
+                            &map,
+                            &possible_positions[(i * step_size)..((i + 1) * step_size)],
+                        )
+                    }));
+                }
+                position_count = loop_check_thread_proc(
+                    &map,
+                    &possible_positions[((thread_count - 1) * step_size)..],
+                );
+                for thread in threads {
+                    position_count += thread.join()?;
+                }
+                position_count
+            }
+        },
+    )
 }
 
 #[cfg(test)]
@@ -260,6 +341,31 @@ mod tests {
                 (7, 9, GuardOrientation::Down),
             ]
         );
+    }
+
+    #[test]
+    fn loop_test() {
+        let map: Map = TEST_STR.try_into().unwrap();
+        assert!(!map.clone().loops());
+        for o in [
+            (3usize, 6usize),
+            (6usize, 7usize),
+            (7usize, 7usize),
+            (1usize, 8usize),
+            (3usize, 8usize),
+            (7usize, 9usize),
+        ] {
+            let mut map = map.clone();
+            if !map.obstacles.insert(o) {
+                panic!("obstacle already present");
+            }
+            assert!(map.loops());
+        }
+    }
+
+    #[test]
+    fn count_possible_loops() {
+        assert_eq!(count_loop_positions(TEST_STR), Ok(6));
     }
 
     #[test]

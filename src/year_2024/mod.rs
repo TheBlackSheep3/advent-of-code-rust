@@ -68,10 +68,16 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        6 => match day06::count_positions(input) {
-            Ok(x) => println!("part 1: {}", x),
-            Err(e) => println!("{}", e),
-        },
+        6 => {
+            match day06::count_positions(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
+            match day06::count_loop_positions(input) {
+                Ok(x) => println!("part 2: {}", x),
+                Err(e) => println!("{}", e),
+            }
+        }
         7..25 => {
             super::print_not_implemented(2024, day);
         }
