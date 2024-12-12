@@ -80,10 +80,16 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        7 => match day07::get_sum_of_calibration_values(input) {
-            Ok(x) => println!("part 1: {}", x),
-            Err(e) => println!("{}", e),
-        },
+        7 => {
+            match day07::get_sum_of_calibration_values(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
+            match day07::get_sum_of_calibration_values_with_concat(input) {
+                Ok(x) => println!("part 2: {}", x),
+                Err(e) => println!("{}", e),
+            }
+        }
         8..25 => {
             super::print_not_implemented(2024, day);
         }

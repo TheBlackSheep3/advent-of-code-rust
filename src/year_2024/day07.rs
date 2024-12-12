@@ -2,6 +2,7 @@
 pub enum Error {
     ParsingFailed,
     BitFieldGeneration,
+    EnumerationFieldGeneration,
     AccumulationFailed,
 }
 
@@ -12,6 +13,10 @@ impl std::fmt::Display for Error {
             Error::BitFieldGeneration => write!(
                 f,
                 "failed to generate proper bit field from unsinged integer"
+            ),
+            Error::EnumerationFieldGeneration => write!(
+                f,
+                "failed to generate proper enumeration field from unsinged integer"
             ),
             Error::AccumulationFailed => write!(f, "result accumulation failed"),
         }
@@ -25,6 +30,9 @@ trait CheckedOp {
     fn checked_mul(self, rhs: Self) -> Option<Self>
     where
         Self: std::marker::Sized;
+    fn concat(self, rhs: Self) -> Option<Self>
+    where
+        Self: std::marker::Sized;
 }
 
 macro_rules! checkedop_impl {
@@ -34,6 +42,11 @@ macro_rules! checkedop_impl {
         }
         fn checked_mul(self, rhs: Self) -> Option<Self> {
             self.checked_mul(rhs)
+        }
+        fn concat(self, rhs: Self) -> Option<Self> {
+            let mut string = self.to_string();
+            string.push_str(&rhs.to_string());
+            string.parse::<Self>().ok()
         }
     };
 }
@@ -50,6 +63,9 @@ impl CheckedOp for u32 {
 impl CheckedOp for u64 {
     checkedop_impl!();
 }
+impl CheckedOp for u128 {
+    checkedop_impl!();
+}
 impl CheckedOp for usize {
     checkedop_impl!();
 }
@@ -63,6 +79,9 @@ impl CheckedOp for i32 {
     checkedop_impl!();
 }
 impl CheckedOp for i64 {
+    checkedop_impl!();
+}
+impl CheckedOp for i128 {
     checkedop_impl!();
 }
 
@@ -115,6 +134,13 @@ impl<
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum Operation {
+    Addition,
+    Multiplication,
+    Concatination,
+}
+
 fn get_bit_vector(unsigned_integer: usize, len: usize) -> Result<Vec<bool>, Error> {
     if unsigned_integer > (1 << len) - 1 {
         Err(Error::BitFieldGeneration)
@@ -129,6 +155,32 @@ fn get_bit_vector(unsigned_integer: usize, len: usize) -> Result<Vec<bool>, Erro
     }
 }
 
+fn get_enumeration_vector(unsigned_integer: u32, len: usize) -> Result<Vec<Operation>, Error> {
+    let interger_u32: u32 = unsigned_integer
+        .try_into()
+        .map_err(|_| Error::EnumerationFieldGeneration)?;
+    let maximum_displayable_value: u32 = 3u32.pow(
+        len.try_into()
+            .map_err(|_| Error::EnumerationFieldGeneration)?,
+    ) - 1u32;
+    if interger_u32 > maximum_displayable_value {
+        Err(Error::EnumerationFieldGeneration)
+    } else {
+        let mut unsigned_integer = unsigned_integer;
+        let mut enumeration_vector = Vec::new();
+        while enumeration_vector.len() < len {
+            enumeration_vector.push(match unsigned_integer % 3 {
+                0 => Ok(Operation::Multiplication),
+                1 => Ok(Operation::Addition),
+                2 => Ok(Operation::Concatination),
+                _ => Err(Error::EnumerationFieldGeneration),
+            }?);
+            unsigned_integer /= 3;
+        }
+        Ok(enumeration_vector)
+    }
+}
+
 impl<
         T: CheckedOp
             + std::str::FromStr
@@ -137,7 +189,7 @@ impl<
             + std::clone::Clone,
     > Equation<T>
 {
-    fn is_solvable(&self) -> bool {
+    fn is_solvable_add_mul(&self) -> bool {
         let len = self.test_values.len();
         if len == 1usize {
             self.expected == *self.test_values.first().unwrap()
@@ -165,6 +217,42 @@ impl<
             false
         }
     }
+
+    fn is_solvable_add_mul_concat(&self) -> bool {
+        let len = self.test_values.len();
+        if len == 1usize {
+            self.expected == *self.test_values.first().unwrap()
+        } else {
+            for i in 0u32..3u32.pow(
+                <usize as std::convert::TryInto<u32>>::try_into(self.test_values.len()).unwrap()
+                    - 1u32,
+            ) {
+                let operation_vector = get_enumeration_vector(i, len - 1).unwrap();
+                let mut iter = self.test_values.iter();
+                let mut val: Option<T> = iter.next().map(|x| x.clone());
+                for (value, operation) in iter.zip(operation_vector.iter()) {
+                    match val {
+                        None => break,
+                        Some(v) => match operation {
+                            Operation::Addition => {
+                                val = v.checked_add(value.clone());
+                            }
+                            Operation::Multiplication => {
+                                val = v.checked_mul(value.clone());
+                            }
+                            Operation::Concatination => {
+                                val = v.concat(value.clone());
+                            }
+                        },
+                    }
+                }
+                if Some(self.expected.clone()) == val {
+                    return true;
+                }
+            }
+            false
+        }
+    }
 }
 
 pub fn get_sum_of_calibration_values(input: &str) -> Result<u64, Error> {
@@ -174,8 +262,22 @@ pub fn get_sum_of_calibration_values(input: &str) -> Result<u64, Error> {
         .map(|l| l.parse::<Equation<u64>>())
         .collect::<Result<Vec<_>, Error>>()?
         .iter()
-        .filter(|e| e.is_solvable())
+        .filter(|e| e.is_solvable_add_mul())
         .fold(Some(0u64), |acc, i| {
+            acc.and_then(|a| a.checked_add(i.expected))
+        })
+        .ok_or(Error::AccumulationFailed)
+}
+
+pub fn get_sum_of_calibration_values_with_concat(input: &str) -> Result<u128, Error> {
+    input
+        .lines()
+        .into_iter()
+        .map(|l| l.parse::<Equation<u128>>())
+        .collect::<Result<Vec<_>, Error>>()?
+        .iter()
+        .filter(|e| e.is_solvable_add_mul_concat())
+        .fold(Some(0u128), |acc, i| {
             acc.and_then(|a| a.checked_add(i.expected))
         })
         .ok_or(Error::AccumulationFailed)
@@ -205,36 +307,79 @@ mod tests {
         assert!("190: 10 19"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!("3267: 81 40 27"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
-        assert!(!"83: 17 5".parse::<Equation<usize>>().unwrap().is_solvable());
+            .is_solvable_add_mul());
+        assert!(!"83: 17 5"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul());
         assert!(!"156: 15 6"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!(!"7290: 6 8 6 15"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!(!"161011: 16 10 13"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!(!"192: 17 8 14"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!(!"21037: 9 7 18 13"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
         assert!("292: 11 6 16 20"
             .parse::<Equation<usize>>()
             .unwrap()
-            .is_solvable());
+            .is_solvable_add_mul());
+    }
+
+    #[test]
+    fn check_solvable_with_concat() {
+        assert!("190: 10 19"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!("3267: 81 40 27"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!(!"83: 17 5"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!("156: 15 6"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!("7290: 6 8 6 15"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!(!"161011: 16 10 13"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!("192: 17 8 14"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!(!"21037: 9 7 18 13"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
+        assert!("292: 11 6 16 20"
+            .parse::<Equation<usize>>()
+            .unwrap()
+            .is_solvable_add_mul_concat());
     }
 
     #[test]
@@ -279,5 +424,38 @@ mod tests {
         assert_eq!(get_bit_vector(1, 4), Ok(vec![true, false, false, false]));
         assert_eq!(get_bit_vector(5, 4), Ok(vec![true, false, true, false]));
         assert_eq!(get_bit_vector(5, 2), Err(Error::BitFieldGeneration));
+    }
+
+    #[test]
+    fn generate_enumeration_vector() {
+        assert_eq!(
+            get_enumeration_vector(5, 4),
+            Ok(vec![
+                Operation::Concatination,
+                Operation::Addition,
+                Operation::Multiplication,
+                Operation::Multiplication
+            ])
+        );
+        assert_eq!(
+            get_enumeration_vector(6, 4),
+            Ok(vec![
+                Operation::Multiplication,
+                Operation::Concatination,
+                Operation::Multiplication,
+                Operation::Multiplication
+            ])
+        );
+        assert_eq!(
+            get_enumeration_vector(27, 2),
+            Err(Error::EnumerationFieldGeneration)
+        );
+    }
+
+    #[test]
+    fn interger_concatinate() {
+        assert_eq!(1u32.concat(2u32), Some(12u32));
+        assert_eq!(56u8.concat(1u8), None);
+        assert_eq!(809u32.concat(99u32), Some(80999u32));
     }
 }
