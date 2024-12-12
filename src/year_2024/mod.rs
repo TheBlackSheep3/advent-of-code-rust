@@ -4,6 +4,7 @@ mod day03;
 mod day04;
 mod day05;
 mod day06;
+mod day07;
 
 pub fn get_implemented() -> Vec<&'static str> {
     vec![
@@ -13,6 +14,7 @@ pub fn get_implemented() -> Vec<&'static str> {
         "Day 4: Ceres Search",
         "Day 5: Print Queue",
         "Day 6: Guard Gallivant",
+        "Day 7: Bridge Repaid",
     ]
 }
 
@@ -78,7 +80,11 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        7..25 => {
+        7 => match day07::get_sum_of_calibration_values(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(e) => println!("{}", e),
+        },
+        8..25 => {
             super::print_not_implemented(2024, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
