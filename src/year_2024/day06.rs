@@ -70,10 +70,10 @@ struct Map {
     iterations: usize,
 }
 
-impl TryFrom<&str> for Map {
-    type Error = Error;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let lines = value.lines();
+impl std::str::FromStr for Map {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lines = s.lines();
         let height = lines.clone().count();
         let width = lines
             .clone()
@@ -186,7 +186,7 @@ impl Map {
 }
 
 pub fn count_positions(input: &str) -> Result<usize, Error> {
-    let x: Map = input.try_into()?;
+    let x: Map = input.parse()?;
     Ok(x.into_iter()
         .map(|(x, y, _)| (x, y))
         .collect::<Vec<(usize, usize)>>()
@@ -210,7 +210,7 @@ fn loop_check_thread_proc(map: &Map, possible_positions: &[(usize, usize)]) -> u
 }
 
 pub fn count_loop_positions(input: &str) -> Result<usize, Error> {
-    let map: Map = input.try_into()?;
+    let map: Map = input.parse()?;
     let possible_positions: Vec<(usize, usize)> = map
         .clone()
         .into_iter()
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn map_iteration() {
-        let map: Map = TEST_STR.try_into().unwrap();
+        let map: Map = TEST_STR.parse().unwrap();
         assert_eq!(
             map.into_iter()
                 .collect::<Vec<(usize, usize, GuardOrientation)>>(),
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn loop_test() {
-        let map: Map = TEST_STR.try_into().unwrap();
+        let map: Map = TEST_STR.parse().unwrap();
         assert!(!map.clone().loops());
         for o in [
             (3usize, 6usize),
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     fn parse_map() {
         assert_eq!(
-            TEST_STR.try_into(),
+            TEST_STR.parse(),
             Ok(Map {
                 guard: Some(Guard {
                     orientation: GuardOrientation::Up,

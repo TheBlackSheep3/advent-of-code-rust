@@ -47,12 +47,12 @@ impl OrderingRule {
     }
 }
 
-impl TryFrom<&str> for OrderingRule {
-    type Error = Error;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+impl std::str::FromStr for OrderingRule {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re: regex::Regex = regex::Regex::new(r"(\d+)\|(\d+)").unwrap();
         match re
-            .captures(value)
+            .captures(s)
             .map_or(None, |c| Some((c.get(1)?, c.get(2)?)))
         {
             Some((first, second)) => {
@@ -103,7 +103,7 @@ fn parse_input(input: &str) -> Result<(Vec<OrderingRule>, Vec<Vec<u32>>), Error>
         .ok_or_else(|| Error::InputSplitFailed)?;
     let rules = lines[..pivot_line_index]
         .iter()
-        .map(|&line| line.try_into())
+        .map(|&line| line.parse())
         .collect::<Vec<Result<OrderingRule, Error>>>();
     let rules = if rules.iter().all(|x| x.is_ok()) {
         Ok(rules
@@ -260,47 +260,47 @@ mod tests {
     #[test]
     fn parse_rule() {
         assert_eq!(
-            OrderingRule::try_from("891|23"),
+            "891|23".parse(),
             Ok(OrderingRule {
                 first: 891,
                 second: 23
             })
         );
         assert_eq!(
-            OrderingRule::try_from("1|2"),
+            "1|2".parse(),
             Ok(OrderingRule {
                 first: 1,
                 second: 2
             })
         );
         assert_eq!(
-            OrderingRule::try_from(" 12|2 "),
+            " 12|2 ".parse(),
             Ok(OrderingRule {
                 first: 12,
                 second: 2
             })
         );
         assert_eq!(
-            OrderingRule::try_from("9|4\n"),
+            "9|4\n".parse(),
             Ok(OrderingRule {
                 first: 9,
                 second: 4
             })
         );
         assert_eq!(
-            OrderingRule::try_from("2|2"),
+            "2|2".parse::<OrderingRule>(),
             Err(Error::InvalidOrderingRule)
         );
         assert_eq!(
-            OrderingRule::try_from("123"),
+            "123".parse::<OrderingRule>(),
             Err(Error::OrderingRuleParsingFailed)
         );
         assert_eq!(
-            OrderingRule::try_from("123|"),
+            "123|".parse::<OrderingRule>(),
             Err(Error::OrderingRuleParsingFailed)
         );
         assert_eq!(
-            OrderingRule::try_from("|123"),
+            "|123".parse::<OrderingRule>(),
             Err(Error::OrderingRuleParsingFailed)
         );
     }
