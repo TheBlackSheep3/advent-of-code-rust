@@ -1,6 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub enum Error {
     ParsingFailed,
+    IntegerTypeTooSmall,
     BitFieldGeneration,
     EnumerationFieldGeneration,
     AccumulationFailed,
@@ -10,6 +11,9 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::ParsingFailed => write!(f, "failed to parse input"),
+            Error::IntegerTypeTooSmall => {
+                write!(f, "failed to parse integer because data type is too small")
+            }
             Error::BitFieldGeneration => write!(
                 f,
                 "failed to generate proper bit field from unsinged integer"
@@ -114,7 +118,7 @@ impl<
                     .ok_or(Error::ParsingFailed)?
                     .as_str()
                     .parse::<T>()
-                    .map_err(|_| Error::ParsingFailed)?;
+                    .map_err(|_| Error::IntegerTypeTooSmall)?;
                 let test_values = c
                     .name("test_values")
                     .ok_or(Error::ParsingFailed)?
@@ -122,7 +126,7 @@ impl<
                     .trim()
                     .split(' ')
                     .into_iter()
-                    .map(|str| str.parse::<T>().map_err(|_| Error::ParsingFailed))
+                    .map(|str| str.parse::<T>().map_err(|_| Error::IntegerTypeTooSmall))
                     .into_iter()
                     .collect::<Result<Vec<_>, Error>>()?;
                 Ok(Equation {
@@ -393,7 +397,7 @@ mod tests {
         );
         assert_eq!(
             "3267: 81 40 27".parse::<Equation<u8>>(),
-            Err(Error::ParsingFailed)
+            Err(Error::IntegerTypeTooSmall)
         );
         assert_eq!(
             "3267: 81 40 27".parse::<Equation<u16>>(),
@@ -404,11 +408,11 @@ mod tests {
         );
         assert_eq!(
             "161011: 16 10 13".parse::<Equation<u8>>(),
-            Err(Error::ParsingFailed)
+            Err(Error::IntegerTypeTooSmall)
         );
         assert_eq!(
             "161011: 16 10 13".parse::<Equation<u16>>(),
-            Err(Error::ParsingFailed)
+            Err(Error::IntegerTypeTooSmall)
         );
         assert_eq!(
             "161011: 16 10 13".parse::<Equation<u32>>(),
@@ -417,6 +421,7 @@ mod tests {
                 test_values: vec![16u32, 10u32, 13u32]
             })
         );
+        assert_eq!("123:".parse::<Equation<u8>>(), Err(Error::ParsingFailed));
     }
 
     #[test]
