@@ -5,6 +5,7 @@ mod day04;
 mod day05;
 mod day06;
 mod day07;
+mod day08;
 
 pub fn get_implemented() -> Vec<&'static str> {
     vec![
@@ -15,6 +16,7 @@ pub fn get_implemented() -> Vec<&'static str> {
         "Day 5: Print Queue",
         "Day 6: Guard Gallivant",
         "Day 7: Bridge Repaid",
+        "Day 8: Resonant Collinearity",
     ]
 }
 
@@ -90,7 +92,11 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        8..25 => {
+        8 => match day08::count_distinct_antinode_positions(input) {
+            Ok(x) => println!("part 1: {}", x),
+            Err(e) => println!("{}", e),
+        },
+        9..25 => {
             super::print_not_implemented(2024, day);
         }
         _ => println!("{} is not a valid day for challenges", day),
