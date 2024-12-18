@@ -1,6 +1,6 @@
 use super::position::Position;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Antinode {
     pub position: Position,
     pub frequency: char,
