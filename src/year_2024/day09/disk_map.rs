@@ -72,6 +72,22 @@ impl DiskMap {
             }
         }
     }
+
+    pub fn get_check_sum(&self) -> Result<usize, super::Error> {
+        let mut checksum: usize = 0;
+        for (position, block) in self.blocks.iter().enumerate() {
+            match block {
+                Some(file_id) => {
+                    checksum = position
+                        .checked_mul(*file_id)
+                        .and_then(|x| x.checked_add(checksum))
+                        .ok_or(super::Error::IntegerOverflow)?;
+                }
+                None => (),
+            }
+        }
+        Ok(checksum)
+    }
 }
 
 #[cfg(test)]
@@ -247,6 +263,49 @@ mod tests {
             modifiable_map.rearrange();
             assert_eq!(expected_map.files.len(), modifiable_map.files.len());
             assert_eq!(expected_map, modifiable_map);
+        }
+    }
+
+    #[test]
+    fn checksum() {
+        let map_checksum_pairs: Vec<(DiskMap, usize)> = vec![
+            (
+                super::super::tests::SMALL_SAMPLE1.parse().unwrap(),
+                0 * 0 + 3 * 1 + 4 * 1 + 5 * 1 + 10 * 2 + 11 * 2 + 12 * 2 + 13 * 2 + 14 * 2,
+            ),
+            (
+                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
+                0 * 0
+                    + 1 * 0
+                    + 2 * 0
+                    + 3 * 0
+                    + 4 * 0
+                    + 5 * 0
+                    + 6 * 0
+                    + 7 * 0
+                    + 8 * 0
+                    + 9 * 1
+                    + 10 * 1
+                    + 11 * 1
+                    + 12 * 1
+                    + 13 * 1
+                    + 14 * 1
+                    + 15 * 1
+                    + 16 * 1
+                    + 17 * 1
+                    + 18 * 2
+                    + 19 * 2
+                    + 20 * 2
+                    + 21 * 2
+                    + 22 * 2
+                    + 23 * 2
+                    + 24 * 2
+                    + 25 * 2
+                    + 26 * 2,
+            ),
+        ];
+        for (map, checksum) in map_checksum_pairs {
+            assert_eq!(map.get_check_sum().unwrap(), checksum);
         }
     }
 }

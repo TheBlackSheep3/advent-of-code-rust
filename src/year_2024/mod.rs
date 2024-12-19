@@ -104,7 +104,12 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         }
-        9 => todo!(),
+        9 => {
+            match day09::get_compacted_filesystem_checksum(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
+        },
         10..25 => {
             super::print_not_implemented(2024, day);
         }
