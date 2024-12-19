@@ -109,6 +109,10 @@ pub fn solve(day: u8, input: &str) {
                 Ok(x) => println!("part 1: {}", x),
                 Err(e) => println!("{}", e),
             }
+            match day09::get_compacted_filesystem_no_fragmentation_checksum(input) {
+                Ok(x) => println!("part 2: {}", x),
+                Err(e) => println!("{}", e),
+            }
         },
         10..25 => {
             super::print_not_implemented(2024, day);

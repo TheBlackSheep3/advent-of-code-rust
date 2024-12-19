@@ -73,6 +73,28 @@ impl DiskMap {
         }
     }
 
+    pub fn rearrange_no_fragmentation(&mut self) {
+        for file in self.files.iter().rev() {
+            match (
+                self.blocks
+                    .windows(file.size)
+                    .position(|w| w.iter().all(|b| *b == None)),
+                self.blocks.iter().position(|b| *b == Some(file.id)),
+            ) {
+                (Some(position_empty), Some(position_file)) => {
+                    if position_empty < position_file {
+                        let file_data = self.blocks[position_file];
+                        for i in 0..file.size {
+                            self.blocks[position_empty + i] = file_data;
+                            self.blocks[position_file + i] = None;
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+
     pub fn get_check_sum(&self) -> Result<usize, super::Error> {
         let mut checksum: usize = 0;
         for (position, block) in self.blocks.iter().enumerate() {
@@ -261,6 +283,59 @@ mod tests {
         ];
         for (mut modifiable_map, expected_map) in disk_map_pairs {
             modifiable_map.rearrange();
+            assert_eq!(expected_map.files.len(), modifiable_map.files.len());
+            assert_eq!(expected_map, modifiable_map);
+        }
+    }
+
+    #[test]
+    fn rearrange_no_fragmentation() {
+        let disk_map_pairs: Vec<(DiskMap, DiskMap)> = vec![
+            (
+                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
+                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
+            ),
+            (
+                super::super::tests::LARGER_SAMPLE.parse().unwrap(),
+                DiskMap {
+                    blocks: vec![
+                        vec![Some(0); 2],
+                        vec![Some(9); 2],
+                        vec![Some(2); 1],
+                        vec![Some(1); 3],
+                        vec![Some(7); 3],
+                        vec![None; 1],
+                        vec![Some(4); 2],
+                        vec![None; 1],
+                        vec![Some(3); 3],
+                        vec![None; 4],
+                        vec![Some(5); 4],
+                        vec![None; 1],
+                        vec![Some(6); 4],
+                        vec![None; 5],
+                        vec![Some(8); 4],
+                        vec![None; 2],
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .collect(),
+                    files: vec![
+                        File { id: 0, size: 2 },
+                        File { id: 1, size: 3 },
+                        File { id: 2, size: 1 },
+                        File { id: 3, size: 3 },
+                        File { id: 4, size: 2 },
+                        File { id: 5, size: 4 },
+                        File { id: 6, size: 4 },
+                        File { id: 7, size: 3 },
+                        File { id: 8, size: 4 },
+                        File { id: 9, size: 2 },
+                    ],
+                },
+            ),
+        ];
+        for (mut modifiable_map, expected_map) in disk_map_pairs {
+            modifiable_map.rearrange_no_fragmentation();
             assert_eq!(expected_map.files.len(), modifiable_map.files.len());
             assert_eq!(expected_map, modifiable_map);
         }
