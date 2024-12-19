@@ -44,6 +44,36 @@ impl std::str::FromStr for DiskMap {
     }
 }
 
+impl DiskMap {
+    pub fn rearrange(&mut self) {
+        let mut free_space_index: usize = 0;
+        let mut occupied_space_index: usize = self.blocks.len() - 1;
+        while free_space_index < occupied_space_index {
+            match (
+                self.blocks[free_space_index],
+                self.blocks[occupied_space_index],
+            ) {
+                (Some(_), None) => {
+                    free_space_index += 1;
+                    occupied_space_index -= 1;
+                }
+                (Some(_), Some(_)) => {
+                    free_space_index += 1;
+                }
+                (None, None) => {
+                    occupied_space_index -= 1;
+                }
+                (a, b) => {
+                    self.blocks[free_space_index] = b;
+                    self.blocks[occupied_space_index] = a;
+                    free_space_index += 1;
+                    occupied_space_index -= 1;
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::DiskMap;
@@ -147,5 +177,76 @@ mod tests {
             "12d".parse::<DiskMap>(),
             Err(super::super::Error::ParsingFailed)
         );
+    }
+
+    #[test]
+    fn rearrange() {
+        let disk_map_pairs: Vec<(DiskMap, DiskMap)> = vec![
+            (
+                super::super::tests::SMALL_SAMPLE1.parse().unwrap(),
+                DiskMap {
+                    blocks: vec![
+                        vec![Some(0); 1],
+                        vec![Some(2); 2],
+                        vec![Some(1); 3],
+                        vec![Some(2); 3],
+                        vec![None; 6],
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .collect(),
+                    files: vec![
+                        File { id: 0, size: 1 },
+                        File { id: 1, size: 3 },
+                        File { id: 2, size: 5 },
+                    ],
+                },
+            ),
+            (
+                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
+                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
+            ),
+            (
+                super::super::tests::LARGER_SAMPLE.parse().unwrap(),
+                DiskMap {
+                    blocks: vec![
+                        vec![Some(0); 2],
+                        vec![Some(9); 2],
+                        vec![Some(8); 1],
+                        vec![Some(1); 3],
+                        vec![Some(8); 3],
+                        vec![Some(2); 1],
+                        vec![Some(7); 3],
+                        vec![Some(3); 3],
+                        vec![Some(6); 1],
+                        vec![Some(4); 2],
+                        vec![Some(6); 1],
+                        vec![Some(5); 4],
+                        vec![Some(6); 2],
+                        vec![None; 14],
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .collect(),
+                    files: vec![
+                        File { id: 0, size: 2 },
+                        File { id: 1, size: 3 },
+                        File { id: 2, size: 1 },
+                        File { id: 3, size: 3 },
+                        File { id: 4, size: 2 },
+                        File { id: 5, size: 4 },
+                        File { id: 6, size: 4 },
+                        File { id: 7, size: 3 },
+                        File { id: 8, size: 4 },
+                        File { id: 9, size: 2 },
+                    ],
+                },
+            ),
+        ];
+        for (mut modifiable_map, expected_map) in disk_map_pairs {
+            modifiable_map.rearrange();
+            assert_eq!(expected_map.files.len(), modifiable_map.files.len());
+            assert_eq!(expected_map, modifiable_map);
+        }
     }
 }
