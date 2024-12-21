@@ -9,6 +9,8 @@ pub mod year_2022;
 pub mod year_2023;
 pub mod year_2024;
 
+mod util;
+
 pub fn print_implemented() {
     print_implemented_year("2015", year_2015::get_implemented());
     print_implemented_year("2016", year_2016::get_implemented());
