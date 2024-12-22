@@ -8,17 +8,25 @@ pub enum Error {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Matrix<T: Default + Copy> {
+pub struct Matrix<T> {
     rows: usize,
     columns: usize,
     data: Box<[T]>,
 }
 
-impl<T: Default + Copy> Matrix<T> {
-    pub fn new(rows: usize, columns: usize) -> Self {
-        Self::init(T::default(), rows, columns)
+impl<T: Copy> Matrix<T> {
+    pub fn init(initial_value: T, rows: usize, columns: usize) -> Self {
+        let size = rows * columns;
+        let data = vec![initial_value; size].into_boxed_slice();
+        Self {
+            rows,
+            columns,
+            data,
+        }
     }
+}
 
+impl<T> Matrix<T> {
     pub fn from_vec(vector: Vec<T>, rows: usize, columns: usize) -> Result<Self, Error> {
         if vector.len() != rows * columns {
             Err(Error::IncompatibleMatrixSize)
@@ -28,16 +36,6 @@ impl<T: Default + Copy> Matrix<T> {
                 columns,
                 data: vector.into_boxed_slice(),
             })
-        }
-    }
-
-    pub fn init(initial_value: T, rows: usize, columns: usize) -> Self {
-        let size = rows * columns;
-        let data = vec![initial_value; size].into_boxed_slice();
-        Self {
-            rows,
-            columns,
-            data,
         }
     }
 
@@ -58,7 +56,13 @@ impl<T: Default + Copy> Matrix<T> {
     }
 }
 
-impl<T: Default + Copy> Index<(usize, usize)> for Matrix<T> {
+impl<T: Default + Copy> Matrix<T> {
+    pub fn new(rows: usize, columns: usize) -> Self {
+        Self::init(T::default(), rows, columns)
+    }
+}
+
+impl<T> Index<(usize, usize)> for Matrix<T> {
     type Output = T;
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         let (row, column) = index;
@@ -70,7 +74,7 @@ impl<T: Default + Copy> Index<(usize, usize)> for Matrix<T> {
     }
 }
 
-impl<T: Default + Copy> IndexMut<(usize, usize)> for Matrix<T> {
+impl<T> IndexMut<(usize, usize)> for Matrix<T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         let (row, column) = index;
         if row >= self.rows || column >= self.columns {
@@ -81,7 +85,7 @@ impl<T: Default + Copy> IndexMut<(usize, usize)> for Matrix<T> {
     }
 }
 
-impl<T: Default + Copy> Index<usize> for Matrix<T> {
+impl<T> Index<usize> for Matrix<T> {
     type Output = [T];
     fn index(&self, index: usize) -> &Self::Output {
         if index >= self.rows {
@@ -92,7 +96,7 @@ impl<T: Default + Copy> Index<usize> for Matrix<T> {
     }
 }
 
-impl<T: Default + Copy> IndexMut<usize> for Matrix<T> {
+impl<T> IndexMut<usize> for Matrix<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         if index >= self.rows {
             panic!("tried to index matrix row out of bounds")
@@ -105,12 +109,12 @@ impl<T: Default + Copy> IndexMut<usize> for Matrix<T> {
 mod iterators {
     use super::Matrix;
 
-    pub struct RowIterator<'a, T: Copy + Default> {
+    pub struct RowIterator<'a, T> {
         row: usize,
         matrix: &'a Matrix<T>,
     }
 
-    impl<'a, T: Default + Copy> RowIterator<'a, T> {
+    impl<'a, T> RowIterator<'a, T> {
         pub(super) fn new(arg: &'a Matrix<T>) -> Self {
             Self {
                 row: 0usize,
@@ -119,7 +123,7 @@ mod iterators {
         }
     }
 
-    impl<'a, T: Copy + Default> Iterator for RowIterator<'a, T> {
+    impl<'a, T> Iterator for RowIterator<'a, T> {
         type Item = &'a [T];
         fn next(&mut self) -> Option<Self::Item> {
             if self.row < self.matrix.rows {
@@ -132,12 +136,12 @@ mod iterators {
         }
     }
 
-    pub struct RowIteratorMut<'a, T: Copy + Default> {
+    pub struct RowIteratorMut<'a, T> {
         row: usize,
         matrix: &'a mut Matrix<T>,
     }
 
-    impl<'a, T: Default + Copy> RowIteratorMut<'a, T> {
+    impl<'a, T> RowIteratorMut<'a, T> {
         pub(super) fn new(arg: &'a mut Matrix<T>) -> Self {
             Self {
                 row: 0usize,
@@ -146,7 +150,7 @@ mod iterators {
         }
     }
 
-    impl<'a, T: Default + Copy> Iterator for RowIteratorMut<'a, T> {
+    impl<'a, T> Iterator for RowIteratorMut<'a, T> {
         type Item = &'a mut [T];
         fn next(&mut self) -> Option<Self::Item> {
             if self.row < self.matrix.rows {
