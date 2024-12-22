@@ -1,12 +1,8 @@
+use crate::util::position::Position;
 use super::position_diff::PositionDifference;
 use super::signed_diff::SignedDiff;
 use super::size::Size;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct Position {
-    pub x: usize,
-    pub y: usize,
-}
 
 impl Position {
     pub fn get_diff(&self, other: &Self) -> Option<PositionDifference> {
