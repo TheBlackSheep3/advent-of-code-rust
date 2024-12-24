@@ -54,6 +54,85 @@ impl<T> Matrix<T> {
     pub fn col_count(&self) -> usize {
         self.columns
     }
+
+    pub fn transposed(&self) -> Matrix<&T> {
+        let original_columns = self.columns;
+        let original_rows = self.rows;
+        let mut borrow_vector: Vec<&T> = Vec::new();
+        if original_columns != 0 && original_rows != 0 {
+            if original_columns == 1 || original_rows == 1 {
+                borrow_vector = self.data.iter().collect();
+            } else {
+                for column in 0..original_columns {
+                    for row in 0..original_rows {
+                        borrow_vector.push(&self[(row, column)]);
+                    }
+                }
+            }
+        }
+        Matrix::<&T> {
+            rows: original_columns,
+            columns: original_rows,
+            data: borrow_vector.into_boxed_slice(),
+        }
+    }
+
+    pub fn transposed_mut(&mut self) -> Matrix<&mut T> {
+        let original_columns = self.columns;
+        let original_rows = self.rows;
+        let borrowed_refs: Vec<&mut T>;
+        if original_columns == 0 || original_rows == 0 {
+            borrowed_refs = Vec::new();
+        } else if original_rows == 1 || original_columns == 1 {
+            borrowed_refs = self.data.iter_mut().collect();
+        } else {
+            let mut borrow_vector: Vec<*mut T> = Vec::new();
+            for column in 0..original_columns {
+                for row in 0..original_rows {
+                    borrow_vector.push(&mut self[(row, column)] as *mut T);
+                }
+            }
+            unsafe {
+                borrowed_refs = borrow_vector.into_iter().map(|ptr| &mut *ptr).collect();
+            }
+        }
+        Matrix::<&mut T> {
+            rows: original_columns,
+            columns: original_rows,
+            data: borrowed_refs.into_boxed_slice(),
+        }
+    }
+
+    pub fn into_transposed(self) -> Self {
+        let original_colums = self.columns;
+        let original_rows = self.rows;
+        let vector: Vec<T>;
+        if original_rows == 0 || original_colums == 0 {
+            vector = Vec::new();
+        } else if original_rows == 1 || original_colums == 1 {
+            vector = self.data.into_vec();
+        } else {
+            let mut temp: Vec<(usize, T)> = self
+                .data
+                .into_vec()
+                .into_iter()
+                .enumerate()
+                .map(|(index, value)| {
+                    let new_col = index / original_colums;
+                    let new_row = index % original_colums;
+                    let new_index = new_row * original_rows + new_col;
+                    (new_index, value)
+                })
+                .collect();
+            temp.sort_by_key(|(index, _)| *index);
+            vector = temp.into_iter().map(|(_, val)| val).collect();
+        }
+        Self {
+            rows: original_colums,
+            columns: original_rows,
+            data: vector.into_boxed_slice(),
+        }
+    }
 }
 
 impl<T: Default + Copy> Matrix<T> {
@@ -215,8 +294,6 @@ mod iterators {
 
 #[cfg(test)]
 mod tests {
-    use std::thread::AccessError;
-
     use super::Error;
     use super::Matrix;
 
@@ -351,5 +428,67 @@ mod tests {
     fn mut_index_column_too_large() {
         let mut matrix = Matrix::<i8>::new(2, 2);
         matrix[(0, 2)] = 1;
+    }
+
+    #[test]
+    fn transposed() {
+        let m = Matrix::<u32>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
+        assert_eq!(
+            m.transposed(),
+            Matrix::<&u32> {
+                rows: 3,
+                columns: 2,
+                data: vec![&1, &4, &2, &5, &3, &6].into_boxed_slice()
+            }
+        );
+    }
+
+    #[test]
+    fn transposed_mut() {
+        let mut m = Matrix::<u32>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
+        let mut transposed = m.transposed_mut();
+        assert_eq!(
+            transposed,
+            Matrix::<&mut u32> {
+                rows: 3,
+                columns: 2,
+                data: vec![&mut 1, &mut 4, &mut 2, &mut 5, &mut 3, &mut 6].into_boxed_slice()
+            }
+        );
+
+        for (i, row) in transposed.rows_mut().enumerate() {
+            for value in row.iter_mut() {
+                **value += i as u32;
+            }
+        }
+        assert_eq!(
+            transposed,
+            Matrix::<&mut u32> {
+                rows: 3,
+                columns: 2,
+                data: vec![&mut 1, &mut 4, &mut 3, &mut 6, &mut 5, &mut 8].into_boxed_slice()
+            }
+        );
+        assert_eq!(
+            m,
+            Matrix::<u32> {
+                rows: 2,
+                columns: 3,
+                data: vec![1, 3, 5, 4, 6, 8].into_boxed_slice()
+            }
+        );
+    }
+
+    #[test]
+    fn into_transposed() {
+        let m = Matrix::<usize>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
+        assert_eq!(
+            m.into_transposed(),
+            Matrix::<usize> {
+                rows: 3,
+                columns: 2,
+                data: vec![1, 4, 2, 5, 3, 6].into_boxed_slice()
+            }
+        );
     }
 }
