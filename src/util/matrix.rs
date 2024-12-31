@@ -294,201 +294,214 @@ mod iterators {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+    use std::fmt::Debug;
+    use std::ops::AddAssign;
+    use std::usize;
+
     use super::Error;
     use super::Matrix;
 
-    #[test]
-    fn new() {
+    #[rstest]
+    #[case(5, 2, Matrix::<u8> { rows: 5, columns: 2, data: vec![0u8;10].into_boxed_slice()})]
+    #[case(18, 356, Matrix::<u32> { rows: 18, columns: 356, data: vec![0u32;6408].into_boxed_slice()})]
+    #[case(0, 356, Matrix::<i32> { rows: 0, columns: 356, data: vec![].into_boxed_slice()})]
+    #[case(9, 0, Matrix::<isize> { rows: 9, columns: 0, data: vec![].into_boxed_slice()})]
+    fn new<T: Copy + Default + Debug + PartialEq>(
+        #[case] row_count: usize,
+        #[case] column_count: usize,
+        #[case] expected: Matrix<T>,
+    ) {
+        assert_eq!(expected, Matrix::<T>::new(row_count, column_count));
+    }
+
+    #[rstest]
+    #[case(vec![1, 2, 3, 4, 5, 6, 7, 8, 9], 3, 3, Ok(Matrix::<i32> { rows: 3, columns: 3, data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice() }))]
+    #[case(vec![1, 2 ], 1, 3, Err(Error::IncompatibleMatrixSize))]
+    #[case(vec![1, 2 ], 1, 1, Err(Error::IncompatibleMatrixSize))]
+    #[case(vec![1, 2, 3, 4, 5, 6, 7, 8, 9], 1, 9, Ok(Matrix::<u16> { rows: 1, columns: 9, data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice() }))]
+    #[case(vec![1, 2, 3, 4, 5, 6, 7, 8, 9], 9, 1, Ok(Matrix::<u16> { rows: 9, columns: 1, data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice() }))]
+    fn from_vec<T: Debug + PartialEq>(
+        #[case] vector: Vec<T>,
+        #[case] row_count: usize,
+        #[case] column_count: usize,
+        #[case] expected: Result<Matrix<T>, Error>,
+    ) {
         assert_eq!(
-            Matrix::<u8>::new(5, 2),
-            Matrix::<u8> {
-                rows: 5,
-                columns: 2,
-                data: vec![0u8; 10].into_boxed_slice()
+            expected,
+            Matrix::<T>::from_vec(vector, row_count, column_count)
+        );
+    }
+
+    #[rstest]
+    #[case(12i16, 2, 2, Matrix::<i16> { rows: 2, columns: 2, data: vec![12i16; 4].into_boxed_slice() })]
+    #[case(9i128, 100, 39, Matrix::<i128> { rows: 100, columns: 39, data: vec![9i128; 3900].into_boxed_slice() })]
+    #[case(-1i8, 2, 4000, Matrix::<i8> { rows: 2, columns: 4000, data: vec![-1i8; 8000].into_boxed_slice() })]
+    fn init<T: Copy + Debug + PartialEq>(
+        #[case] initial_value: T,
+        #[case] row_count: usize,
+        #[case] column_count: usize,
+        #[case] expected: Matrix<T>,
+    ) {
+        assert_eq!(
+            expected,
+            Matrix::<T>::init(initial_value, row_count, column_count)
+        );
+    }
+
+    #[rstest]
+    #[case(Matrix::<i16>::new(18, 29), 18, 29)]
+    #[case(Matrix::<i64>::new(99,  4), 99,  4)]
+    #[case(Matrix::<i32>::new( 8,  5),  8,  5)]
+    fn matrix_size<T>(
+        #[case] m: Matrix<T>,
+        #[case] expected_row_count: usize,
+        #[case] expected_column_count: usize,
+    ) {
+        assert_eq!(expected_row_count, m.row_count());
+        assert_eq!(expected_column_count, m.col_count());
+    }
+
+    enum IndexType {
+        Cell((usize, usize)),
+        Row(usize),
+    }
+
+    enum IndexResultType<'a, T> {
+        Cell(&'a T),
+        Row(&'a [T]),
+    }
+
+    #[rstest]
+    #[case(IndexType::Cell((0, 0)), IndexResultType::Cell(&2))]
+    #[case(IndexType::Cell((0, 1)), IndexResultType::Cell(&3))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((0, 2)), IndexResultType::Cell(&0))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((0, 9)), IndexResultType::Cell(&0))]
+    #[case(IndexType::Cell((1, 0)), IndexResultType::Cell(&4))]
+    #[case(IndexType::Cell((1, 1)), IndexResultType::Cell(&5))]
+    #[case(IndexType::Cell((2, 0)), IndexResultType::Cell(&1))]
+    #[case(IndexType::Cell((2, 1)), IndexResultType::Cell(&7))]
+    #[case(IndexType::Cell((3, 0)), IndexResultType::Cell(&9))]
+    #[case(IndexType::Cell((3, 1)), IndexResultType::Cell(&0))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((4, 0)), IndexResultType::Cell(&0))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((9, 0)), IndexResultType::Cell(&0))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((4, 9)), IndexResultType::Cell(&0))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((9, 9)), IndexResultType::Cell(&0))]
+    #[case(IndexType::Row(0),       IndexResultType::Row(&[2, 3]))]
+    #[case(IndexType::Row(1),       IndexResultType::Row(&[4, 5]))]
+    #[case(IndexType::Row(2),       IndexResultType::Row(&[1, 7]))]
+    #[case(IndexType::Row(3),       IndexResultType::Row(&[9, 0]))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Row(4),       IndexResultType::Row(&[]))]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Row(9),       IndexResultType::Row(&[]))]
+    fn indexing(#[case] index: IndexType, #[case] expected: IndexResultType<usize>) {
+        let matrix = Matrix::<usize>::from_vec(vec![2, 3, 4, 5, 1, 7, 9, 0], 4, 2).unwrap();
+        match (index, expected) {
+            (IndexType::Cell(index), IndexResultType::Cell(expected)) => {
+                assert_eq!(expected, &matrix[index])
             }
-        );
-        assert_eq!(
-            Matrix::<u32>::new(18, 356),
-            Matrix::<u32> {
-                rows: 18,
-                columns: 356,
-                data: vec![0u32; 6408].into_boxed_slice()
+            (IndexType::Row(index), IndexResultType::Row(expected)) => {
+                assert_eq!(expected, &matrix[index])
             }
-        );
+            _ => panic!("missmatched index types"),
+        }
     }
 
-    #[test]
-    fn from_vec() {
-        let vector = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        assert_eq!(
-            Matrix::<i32>::from_vec(vector.clone(), 3usize, 3usize),
-            Ok(Matrix::<i32> {
-                rows: 3,
-                columns: 3,
-                data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice()
-            })
-        );
-        assert_eq!(
-            Matrix::<i32>::from_vec(vector.clone(), 2, 4),
-            Err(Error::IncompatibleMatrixSize)
-        );
-        assert_eq!(
-            Matrix::<i32>::from_vec(vector.clone(), 2, 5),
-            Err(Error::IncompatibleMatrixSize)
-        );
-        assert_eq!(
-            Matrix::<i32>::from_vec(vector.clone(), 1usize, 9usize),
-            Ok(Matrix::<i32> {
-                rows: 1,
-                columns: 9,
-                data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice()
-            })
-        );
-        assert_eq!(
-            Matrix::<i32>::from_vec(vector.clone(), 9usize, 1usize),
-            Ok(Matrix::<i32> {
-                rows: 9,
-                columns: 1,
-                data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9].into_boxed_slice()
-            })
-        );
-    }
-
-    #[test]
-    fn init() {
-        assert_eq!(
-            Matrix::<i16>::init(12i16, 2, 2),
-            Matrix::<i16> {
-                rows: 2,
-                columns: 2,
-                data: vec![12i16; 4].into_boxed_slice()
+    #[rstest]
+    #[case(IndexType::Cell((0, 0)), IndexResultType::Cell(&12), Matrix::<u64> { rows: 2, columns: 2, data: vec![12, 3222, 77, 0].into_boxed_slice()})]
+    #[case(IndexType::Cell((0, 1)), IndexResultType::Cell(&80), Matrix::<u64> { rows: 2, columns: 2, data: vec![90, 80, 77, 0].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((0, 2)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((0, 9)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[case(IndexType::Cell((1, 0)), IndexResultType::Cell(&4), Matrix::<u64> { rows: 2, columns: 2, data: vec![90, 3222, 4, 0].into_boxed_slice()})]
+    #[case(IndexType::Cell((1, 1)), IndexResultType::Cell(&13), Matrix::<u64> { rows: 2, columns: 2, data: vec![90, 3222, 77, 13].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((2, 0)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((9, 0)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((2, 2)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Cell((9, 9)), IndexResultType::Cell(&0), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[case(IndexType::Row(0), IndexResultType::Row(&[1, 2]), Matrix::<u64> { rows: 2, columns: 2, data: vec![1, 2, 77, 0].into_boxed_slice()})]
+    #[case(IndexType::Row(1), IndexResultType::Row(&[89, 5]), Matrix::<u64> { rows: 2, columns: 2, data: vec![90, 3222, 89, 5].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Row(2), IndexResultType::Row(&[]), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    #[should_panic(expected = "out of bounds")]
+    #[case(IndexType::Row(9), IndexResultType::Row(&[]), Matrix::<u64> { rows: 0, columns: 0, data: vec![].into_boxed_slice()})]
+    fn mut_indexing(
+        #[case] index: IndexType,
+        #[case] value: IndexResultType<u64>,
+        #[case] expected: Matrix<u64>,
+    ) {
+        let mut matrix = Matrix::<u64>::from_vec(vec![90, 3222, 77, 0], 2, 2).unwrap();
+        match (index, value) {
+            (IndexType::Cell(index), IndexResultType::Cell(value)) => matrix[index] = *value,
+            (IndexType::Row(index), IndexResultType::Row(value)) => {
+                for (x, y) in matrix[index].iter_mut().zip(value.iter()) {
+                    *x = *y
+                }
             }
-        );
+            _ => panic!("missmatched index types"),
+        }
+        assert_eq!(expected, matrix);
     }
 
-    #[test]
-    fn matrix_size() {
-        let m = Matrix::<u8>::new(14, 9);
-        assert_eq!(m.row_count(), 14);
-        assert_eq!(m.col_count(), 9);
+    #[rstest]
+    #[case(Matrix::<u128> { rows: 2, columns: 3, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<&u128> { rows: 3, columns: 2, data: vec![&1, &4, &2, &5, &3, &6].into_boxed_slice() })]
+    #[case(Matrix::<i128> { rows: 3, columns: 2, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<&i128> { rows: 2, columns: 3, data: vec![&1, &3, &5, &2, &4, &6].into_boxed_slice() })]
+    #[case(Matrix::<u16> { rows: 2, columns: 2, data: vec![1, 2, 3, 4].into_boxed_slice() }, Matrix::<&u16> { rows: 2, columns: 2, data: vec![&1, &3, &2, &4].into_boxed_slice() })]
+    #[case(Matrix::<i16> { rows: 1, columns: 5, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<&i16> { rows: 5, columns: 1, data: vec![&1, &2, &3, &4, &5].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 5, columns: 1, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<&u32> { rows: 1, columns: 5, data: vec![&1, &2, &3, &4, &5].into_boxed_slice() })]
+    #[case(Matrix::<u8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() }, Matrix::<&u8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<i8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<&i8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<&u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() })]
+    fn transposed<T: Debug + PartialEq>(#[case] m: Matrix<T>, #[case] expected: Matrix<&T>) {
+        assert_eq!(expected, m.transposed());
     }
 
-    #[test]
-    fn index() {
-        let matrix = Matrix::<i16>::from_vec(vec![2, 3, 4, 5, 1, 7, 9, 0], 4, 2).unwrap();
-        assert_eq!(matrix[(0, 0)], 2);
-        assert_eq!(matrix[(0, 1)], 3);
-        assert_eq!(matrix[(1, 0)], 4);
-        assert_eq!(matrix[(1, 1)], 5);
-        assert_eq!(matrix[(2, 0)], 1);
-        assert_eq!(matrix[(2, 1)], 7);
-        assert_eq!(matrix[(3, 0)], 9);
-        assert_eq!(matrix[(3, 1)], 0);
-        assert_eq!(matrix[0], [2, 3][..]);
-        assert_eq!(matrix[1], [4, 5][..]);
-        assert_eq!(matrix[2], [1, 7][..]);
-        assert_eq!(matrix[3], [9, 0][..]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn index_row_too_large() {
-        let _ = Matrix::<isize>::new(2, 2)[(2, 0)];
-    }
-
-    #[test]
-    #[should_panic]
-    fn index_column_too_large() {
-        let _ = Matrix::<isize>::new(2, 2)[(0, 2)];
-    }
-
-    #[test]
-    fn mut_index() {
-        let mut matrix = Matrix::<u128>::from_vec(vec![90, 3222, 77, 0], 2, 2).unwrap();
-        matrix[(0, 1)] = 42u128;
-        assert_eq!(
-            matrix,
-            Matrix::<u128> {
-                rows: 2,
-                columns: 2,
-                data: vec![90, 42, 77, 0].into_boxed_slice()
-            }
-        );
-    }
-
-    #[test]
-    #[should_panic]
-    fn mut_index_row_too_large() {
-        let mut matrix = Matrix::<i8>::new(2, 2);
-        matrix[(2, 0)] = 1;
-    }
-
-    #[test]
-    #[should_panic]
-    fn mut_index_column_too_large() {
-        let mut matrix = Matrix::<i8>::new(2, 2);
-        matrix[(0, 2)] = 1;
-    }
-
-    #[test]
-    fn transposed() {
-        let m = Matrix::<u32>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
-        assert_eq!(
-            m.transposed(),
-            Matrix::<&u32> {
-                rows: 3,
-                columns: 2,
-                data: vec![&1, &4, &2, &5, &3, &6].into_boxed_slice()
-            }
-        );
-    }
-
-    #[test]
-    fn transposed_mut() {
-        let mut m = Matrix::<u32>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
-        let mut transposed = m.transposed_mut();
-        assert_eq!(
-            transposed,
-            Matrix::<&mut u32> {
-                rows: 3,
-                columns: 2,
-                data: vec![&mut 1, &mut 4, &mut 2, &mut 5, &mut 3, &mut 6].into_boxed_slice()
-            }
-        );
-
-        for (i, row) in transposed.rows_mut().enumerate() {
+    #[rstest]
+    #[case(Matrix::<i32> { rows: 2, columns: 3, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<i32> { rows: 2, columns: 3, data: vec![1, 3, 5, 4, 6, 8].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 3, columns: 2, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<u32> { rows: 3, columns: 2, data: vec![1, 3, 3, 5, 5, 7].into_boxed_slice() })]
+    #[case(Matrix::<u16> { rows: 2, columns: 2, data: vec![1, 2, 3, 4].into_boxed_slice() }, Matrix::<u16> { rows: 2, columns: 2, data: vec![1, 3, 3, 5].into_boxed_slice() })]
+    #[case(Matrix::<i16> { rows: 1, columns: 5, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<i16> { rows: 1, columns: 5, data: vec![1, 3, 5, 7, 9].into_boxed_slice() })]
+    #[case(Matrix::<i64> { rows: 5, columns: 1, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<i64> { rows: 5, columns: 1, data: vec![1, 2, 3, 4, 5].into_boxed_slice() })]
+    #[case(Matrix::<u8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() }, Matrix::<u8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<i8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<i8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() })]
+    fn transposed_mut<T: AddAssign + Debug + PartialEq + TryFrom<usize>>(
+        #[case] m: Matrix<T>,
+        #[case] expected: Matrix<T>,
+    ) where
+        <T as TryFrom<usize>>::Error: Debug,
+    {
+        let mut m = m;
+        for (i, row) in m.transposed_mut().rows_mut().enumerate() {
             for value in row.iter_mut() {
-                **value += i as u32;
+                **value += T::try_from(i).unwrap()
             }
         }
-        assert_eq!(
-            transposed,
-            Matrix::<&mut u32> {
-                rows: 3,
-                columns: 2,
-                data: vec![&mut 1, &mut 4, &mut 3, &mut 6, &mut 5, &mut 8].into_boxed_slice()
-            }
-        );
-        assert_eq!(
-            m,
-            Matrix::<u32> {
-                rows: 2,
-                columns: 3,
-                data: vec![1, 3, 5, 4, 6, 8].into_boxed_slice()
-            }
-        );
+        assert_eq!(expected, m);
     }
 
-    #[test]
-    fn into_transposed() {
-        let m = Matrix::<usize>::from_vec(vec![1, 2, 3, 4, 5, 6], 2, 3).unwrap();
-        assert_eq!(
-            m.into_transposed(),
-            Matrix::<usize> {
-                rows: 3,
-                columns: 2,
-                data: vec![1, 4, 2, 5, 3, 6].into_boxed_slice()
-            }
-        );
+    #[rstest]
+    #[case(Matrix::<u128> { rows: 2, columns: 3, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<u128> { rows: 3, columns: 2, data: vec![1, 4, 2, 5, 3, 6].into_boxed_slice() })]
+    #[case(Matrix::<i128> { rows: 3, columns: 2, data: vec![1, 2, 3, 4, 5, 6].into_boxed_slice() }, Matrix::<i128> { rows: 2, columns: 3, data: vec![1, 3, 5, 2, 4, 6].into_boxed_slice() })]
+    #[case(Matrix::<u16> { rows: 2, columns: 2, data: vec![1, 2, 3, 4].into_boxed_slice() }, Matrix::<u16> { rows: 2, columns: 2, data: vec![1, 3, 2, 4].into_boxed_slice() })]
+    #[case(Matrix::<i16> { rows: 1, columns: 5, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<i16> { rows: 5, columns: 1, data: vec![1, 2, 3, 4, 5].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 5, columns: 1, data: vec![1, 2, 3, 4, 5].into_boxed_slice() }, Matrix::<u32> { rows: 1, columns: 5, data: vec![1, 2, 3, 4, 5].into_boxed_slice() })]
+    #[case(Matrix::<u8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() }, Matrix::<u8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<i8> { rows: 2, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<i8> { rows: 0, columns: 2, data: vec![].into_boxed_slice() })]
+    #[case(Matrix::<u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() }, Matrix::<u32> { rows: 0, columns: 0, data: vec![].into_boxed_slice() })]
+    fn into_transposed<T: Debug + PartialEq>(#[case] m: Matrix<T>, #[case] expected: Matrix<T>) {
+        assert_eq!(expected, m.into_transposed())
     }
 }

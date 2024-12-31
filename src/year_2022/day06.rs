@@ -35,39 +35,39 @@ fn are_unique_chars(input: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
-    use phf::phf_map;
 
-    static SAMPE_INPUT: phf::Map<&'static str, (i32, i32)> = phf_map! {
-        "mjqjpqmgbljsphdztnvjfqwrcgsmlb" => (7, 19),
-        "bvwbjplbgvbhsrlpgdmjqwftvncz" => (5, 23),
-        "nppdvjthqldpwncqszvftbrmjlhg" => (6, 23),
-        "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" => (10, 29),
-        "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" => (11, 26),
-    };
-
-    #[test]
-    fn start_package() {
-        for (input, &marker) in &SAMPE_INPUT {
-            assert_eq!(get_start_package(input), Some(marker.0));
-        }
-        assert_eq!(get_start_package(""), None);
-        assert_eq!(get_start_package("abcabc"), None);
+    #[rstest]
+    #[case("mjqjpqmgbljsphdztnvjfqwrcgsmlb", Some(7))]
+    #[case("bvwbjplbgvbhsrlpgdmjqwftvncz", Some(5))]
+    #[case("nppdvjthqldpwncqszvftbrmjlhg", Some(6))]
+    #[case("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", Some(10))]
+    #[case("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", Some(11))]
+    #[case("", None)]
+    #[case("abcabc", None)]
+    fn start_package(#[case] input: &str, #[case] expected: Option<i32>) {
+        assert_eq!(expected, get_start_package(input))
     }
 
-    #[test]
-    fn start_message() {
-        for (input, &marker) in &SAMPE_INPUT {
-            assert_eq!(get_start_message(input), Some(marker.1));
-        }
-        assert_eq!(get_start_message(""), None);
-        assert_eq!(get_start_message("abcdefghijklmabcdefghijklm"), None)
+    #[rstest]
+    #[case("mjqjpqmgbljsphdztnvjfqwrcgsmlb", Some(19))]
+    #[case("bvwbjplbgvbhsrlpgdmjqwftvncz", Some(23))]
+    #[case("nppdvjthqldpwncqszvftbrmjlhg", Some(23))]
+    #[case("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", Some(29))]
+    #[case("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", Some(26))]
+    #[case("", None)]
+    #[case("abcdefghijklmabcdefghijklm", None)]
+    fn start_message(#[case] input: &str, #[case] expected: Option<i32>) {
+        assert_eq!(expected, get_start_message(input))
     }
 
-    #[test]
-    fn unique() {
-        assert!(!are_unique_chars("bbbbbb"));
-        assert!(are_unique_chars("abcde"));
-        assert!(!are_unique_chars("56as96d"));
+    #[rstest]
+    #[case("abcde", true)]
+    #[case("bbbbbb", false)]
+    #[case("56as96d", false)]
+    fn unique(#[case] input: &str, #[case] expected: bool) {
+        assert_eq!(expected, are_unique_chars(input))
     }
 }

@@ -193,6 +193,8 @@ pub fn sum_middle_page_numbers_of_fixed_invalid_print_orders(input: &str) -> Res
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR: &str = "47|53
@@ -232,21 +234,13 @@ mod tests {
         )
     }
 
-    #[test]
-    fn fix_orders() {
+    #[rstest]
+    #[case(vec![75u32, 97u32, 47u32, 61u32, 53u32], Some(vec![97u32, 75u32, 47u32, 61u32, 53u32]))]
+    #[case(vec![61u32, 13u32, 29u32], Some(vec![61u32, 29u32, 13u32]))]
+    #[case(vec![97u32, 13u32, 75u32, 29u32, 47u32], Some(vec![97u32, 75u32, 47u32, 29u32, 13u32]))]
+    fn fix_orders(#[case] order: Vec<u32>, #[case] expected: Option<Vec<u32>>) {
         let (rules, _) = parse_input(TEST_STR).unwrap();
-        assert_eq!(
-            fix_order(&vec![75u32, 97u32, 47u32, 61u32, 53u32], &rules),
-            Some(vec![97u32, 75u32, 47u32, 61u32, 53u32])
-        );
-        assert_eq!(
-            fix_order(&vec![61u32, 13u32, 29u32], &rules),
-            Some(vec![61u32, 29u32, 13u32])
-        );
-        assert_eq!(
-            fix_order(&vec![97u32, 13u32, 75u32, 29u32, 47u32], &rules),
-            Some(vec![97u32, 75u32, 47u32, 29u32, 13u32])
-        );
+        assert_eq!(expected, fix_order(&order, &rules))
     }
 
     #[test]
@@ -257,84 +251,42 @@ mod tests {
         );
     }
 
-    #[test]
-    fn parse_rule() {
-        assert_eq!(
-            "891|23".parse(),
-            Ok(OrderingRule {
-                first: 891,
-                second: 23
-            })
-        );
-        assert_eq!(
-            "1|2".parse(),
-            Ok(OrderingRule {
-                first: 1,
-                second: 2
-            })
-        );
-        assert_eq!(
-            " 12|2 ".parse(),
-            Ok(OrderingRule {
-                first: 12,
-                second: 2
-            })
-        );
-        assert_eq!(
-            "9|4\n".parse(),
-            Ok(OrderingRule {
-                first: 9,
-                second: 4
-            })
-        );
-        assert_eq!(
-            "2|2".parse::<OrderingRule>(),
-            Err(Error::InvalidOrderingRule)
-        );
-        assert_eq!(
-            "123".parse::<OrderingRule>(),
-            Err(Error::OrderingRuleParsingFailed)
-        );
-        assert_eq!(
-            "123|".parse::<OrderingRule>(),
-            Err(Error::OrderingRuleParsingFailed)
-        );
-        assert_eq!(
-            "|123".parse::<OrderingRule>(),
-            Err(Error::OrderingRuleParsingFailed)
-        );
+    #[rstest]
+    #[case("891|23", Ok(OrderingRule { first: 891, second: 23 }))]
+    #[case("1|2", Ok(OrderingRule { first: 1, second: 2 }))]
+    #[case(" 12|2 ", Ok(OrderingRule { first: 12, second: 2 }))]
+    #[case("9|4\n", Ok(OrderingRule { first: 9, second: 4 }))]
+    #[case("2|2", Err(Error::InvalidOrderingRule))]
+    #[case("123", Err(Error::OrderingRuleParsingFailed))]
+    #[case("123|", Err(Error::OrderingRuleParsingFailed))]
+    #[case("|123", Err(Error::OrderingRuleParsingFailed))]
+    fn parse_rule(#[case] input: &str, #[case] expected: Result<OrderingRule, Error>) {
+        assert_eq!(expected, input.parse())
     }
 
-    #[test]
-    fn check_rule() {
+    #[rstest]
+    #[case(vec![1u32, 2u32, 3u32], true)]
+    #[case(vec![1u32, 3u32, 2u32], true)]
+    #[case(vec![3u32, 2u32], true)]
+    #[case(vec![1u32, 3u32], true)]
+    #[case(vec![2u32, 1u32, 3u32], false)]
+    #[case(vec![2u32, 3u32, 1u32], false)]
+    fn check_rule(#[case] order: Vec<u32>, #[case] expected: bool) {
         let rule = OrderingRule {
             first: 1u32,
             second: 2u32,
         };
-        assert!(rule.is_satisfied(&vec![1u32, 2u32, 3u32]));
-        assert!(rule.is_satisfied(&vec![1u32, 3u32, 2u32]));
-        assert!(rule.is_satisfied(&vec![3u32, 2u32]));
-        assert!(rule.is_satisfied(&vec![1u32, 3u32]));
-        assert!(!rule.is_satisfied(&vec![2u32, 1u32, 3u32]));
-        assert!(!rule.is_satisfied(&vec![2u32, 3u32, 1u32]));
+        assert_eq!(expected, rule.is_satisfied(&order))
     }
 
-    #[test]
-    fn parse_order() {
-        assert_eq!(parse_print_order("11,2,4"), Ok(vec![11u32, 2u32, 4u32]));
-        assert_eq!(
-            parse_print_order("32,11,2,8,4"),
-            Ok(vec![32u32, 11u32, 2u32, 8u32, 4u32])
-        );
-        assert_eq!(
-            parse_print_order("12,3,4,"),
-            Err(Error::PrintOrderParsingFailed)
-        );
-        assert_eq!(
-            parse_print_order(",12,3,4"),
-            Err(Error::PrintOrderParsingFailed)
-        );
-        assert_eq!(parse_print_order("8,12,3,4"), Err(Error::InvalidPrintOrder));
-        assert_eq!(parse_print_order("8,4,4"), Err(Error::InvalidPrintOrder));
+    #[rstest]
+    #[case("11,2,4", Ok(vec![11u32, 2u32, 4u32]))]
+    #[case("32,11,2,8,4", Ok(vec![32u32, 11u32, 2u32, 8u32, 4u32]))]
+    #[case("12,3,4,", Err(Error::PrintOrderParsingFailed))]
+    #[case(",12,3,4", Err(Error::PrintOrderParsingFailed))]
+    #[case("8,12,3,4", Err(Error::InvalidPrintOrder))]
+    #[case("8,4,4", Err(Error::InvalidPrintOrder))]
+    fn parse_order(#[case] input: &str, #[case] expected: Result<Vec<u32>, Error>) {
+        assert_eq!(expected, parse_print_order(input))
     }
 }

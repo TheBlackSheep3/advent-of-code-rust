@@ -114,273 +114,52 @@ impl DiskMap {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
+    use super::super::tests::LARGER_SAMPLE;
+    use super::super::tests::SMALL_SAMPLE1;
+    use super::super::tests::SMALL_SAMPLE2;
+    use super::super::Error;
     use super::DiskMap;
     use super::File;
 
-    #[test]
-    fn parse() {
-        assert_eq!(
-            super::super::tests::SMALL_SAMPLE1.parse::<DiskMap>(),
-            Ok(DiskMap {
-                blocks: vec![
-                    vec![Some(0); 1],
-                    vec![None; 2],
-                    vec![Some(1); 3],
-                    vec![None; 4],
-                    vec![Some(2); 5]
-                ]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>(),
-                files: vec![
-                    File { id: 0, size: 1 },
-                    File { id: 1, size: 3 },
-                    File { id: 2, size: 5 }
-                ]
-            })
-        );
-        assert_eq!(
-            super::super::tests::SMALL_SAMPLE2.parse::<DiskMap>(),
-            Ok(DiskMap {
-                blocks: vec![vec![Some(0); 9], vec![Some(1); 9], vec![Some(2); 9]]
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>(),
-                files: vec![
-                    File { id: 0, size: 9 },
-                    File { id: 1, size: 9 },
-                    File { id: 2, size: 9 }
-                ]
-            })
-        );
-        assert_eq!(
-            super::super::tests::LARGER_SAMPLE.parse::<DiskMap>(),
-            Ok(DiskMap {
-                blocks: vec![
-                    vec![Some(0); 2],
-                    vec![None; 3],
-                    vec![Some(1); 3],
-                    vec![None; 3],
-                    vec![Some(2); 1],
-                    vec![None; 3],
-                    vec![Some(3); 3],
-                    vec![None; 1],
-                    vec![Some(4); 2],
-                    vec![None; 1],
-                    vec![Some(5); 4],
-                    vec![None; 1],
-                    vec![Some(6); 4],
-                    vec![None; 1],
-                    vec![Some(7); 3],
-                    vec![None; 1],
-                    vec![Some(8); 4],
-                    vec![Some(9); 2]
-                ]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>(),
-                files: vec![
-                    File { id: 0, size: 2 },
-                    File { id: 1, size: 3 },
-                    File { id: 2, size: 1 },
-                    File { id: 3, size: 3 },
-                    File { id: 4, size: 2 },
-                    File { id: 5, size: 4 },
-                    File { id: 6, size: 4 },
-                    File { id: 7, size: 3 },
-                    File { id: 8, size: 4 },
-                    File { id: 9, size: 2 },
-                ]
-            })
-        );
-        assert_eq!(
-            "123\n456".parse::<DiskMap>(),
-            Err(super::super::Error::ParsingFailed)
-        );
-        assert_eq!(
-            "123\n".parse::<DiskMap>(),
-            Ok(DiskMap {
-                blocks: vec![vec![Some(0); 1], vec![None; 2], vec![Some(1); 3]]
-                    .into_iter()
-                    .flatten()
-                    .collect(),
-                files: vec![File { id: 0, size: 1 }, File { id: 1, size: 3 }]
-            })
-        );
-        assert_eq!(
-            "".parse::<DiskMap>(),
-            Err(super::super::Error::ParsingFailed)
-        );
-        assert_eq!(
-            "12d".parse::<DiskMap>(),
-            Err(super::super::Error::ParsingFailed)
-        );
+    #[rstest]
+    #[case(SMALL_SAMPLE1, Ok(DiskMap { blocks: vec![ vec![Some(0); 1], vec![None; 2], vec![Some(1); 3], vec![None; 4], vec![Some(2); 5] ] .into_iter() .flatten() .collect::<Vec<_>>(), files: vec![ File { id: 0, size: 1 }, File { id: 1, size: 3 }, File { id: 2, size: 5 } ] }))]
+    #[case(SMALL_SAMPLE2, Ok(DiskMap { blocks: vec![vec![Some(0); 9], vec![Some(1); 9], vec![Some(2); 9]] .into_iter() .flatten() .collect::<Vec<_>>(), files: vec![ File { id: 0, size: 9 }, File { id: 1, size: 9 }, File { id: 2, size: 9 } ] }))]
+    #[case(LARGER_SAMPLE, Ok(DiskMap { blocks: vec![ vec![Some(0); 2], vec![None; 3], vec![Some(1); 3], vec![None; 3], vec![Some(2); 1], vec![None; 3], vec![Some(3); 3], vec![None; 1], vec![Some(4); 2], vec![None; 1], vec![Some(5); 4], vec![None; 1], vec![Some(6); 4], vec![None; 1], vec![Some(7); 3], vec![None; 1], vec![Some(8); 4], vec![Some(9); 2] ] .into_iter() .flatten() .collect::<Vec<_>>(), files: vec![ File { id: 0, size: 2 }, File { id: 1, size: 3 }, File { id: 2, size: 1 }, File { id: 3, size: 3 }, File { id: 4, size: 2 }, File { id: 5, size: 4 }, File { id: 6, size: 4 }, File { id: 7, size: 3 }, File { id: 8, size: 4 }, File { id: 9, size: 2 }, ] }))]
+    #[case("123\n456", Err(Error::ParsingFailed))]
+    #[case("123\n", Ok(DiskMap { blocks: vec![vec![Some(0); 1], vec![None; 2], vec![Some(1); 3]] .into_iter() .flatten() .collect(), files: vec![File { id: 0, size: 1 }, File { id: 1, size: 3 }] }))]
+    #[case("", Err(Error::ParsingFailed))]
+    #[case("12d", Err(Error::ParsingFailed))]
+    fn parse(#[case] input: &str, #[case] expected: Result<DiskMap, Error>) {
+        assert_eq!(expected, input.parse::<DiskMap>())
     }
 
-    #[test]
-    fn rearrange() {
-        let disk_map_pairs: Vec<(DiskMap, DiskMap)> = vec![
-            (
-                super::super::tests::SMALL_SAMPLE1.parse().unwrap(),
-                DiskMap {
-                    blocks: vec![
-                        vec![Some(0); 1],
-                        vec![Some(2); 2],
-                        vec![Some(1); 3],
-                        vec![Some(2); 3],
-                        vec![None; 6],
-                    ]
-                    .into_iter()
-                    .flatten()
-                    .collect(),
-                    files: vec![
-                        File { id: 0, size: 1 },
-                        File { id: 1, size: 3 },
-                        File { id: 2, size: 5 },
-                    ],
-                },
-            ),
-            (
-                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
-                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
-            ),
-            (
-                super::super::tests::LARGER_SAMPLE.parse().unwrap(),
-                DiskMap {
-                    blocks: vec![
-                        vec![Some(0); 2],
-                        vec![Some(9); 2],
-                        vec![Some(8); 1],
-                        vec![Some(1); 3],
-                        vec![Some(8); 3],
-                        vec![Some(2); 1],
-                        vec![Some(7); 3],
-                        vec![Some(3); 3],
-                        vec![Some(6); 1],
-                        vec![Some(4); 2],
-                        vec![Some(6); 1],
-                        vec![Some(5); 4],
-                        vec![Some(6); 2],
-                        vec![None; 14],
-                    ]
-                    .into_iter()
-                    .flatten()
-                    .collect(),
-                    files: vec![
-                        File { id: 0, size: 2 },
-                        File { id: 1, size: 3 },
-                        File { id: 2, size: 1 },
-                        File { id: 3, size: 3 },
-                        File { id: 4, size: 2 },
-                        File { id: 5, size: 4 },
-                        File { id: 6, size: 4 },
-                        File { id: 7, size: 3 },
-                        File { id: 8, size: 4 },
-                        File { id: 9, size: 2 },
-                    ],
-                },
-            ),
-        ];
-        for (mut modifiable_map, expected_map) in disk_map_pairs {
-            modifiable_map.rearrange();
-            assert_eq!(expected_map.files.len(), modifiable_map.files.len());
-            assert_eq!(expected_map, modifiable_map);
-        }
+    #[rstest]
+    #[case(SMALL_SAMPLE1.parse().unwrap(), DiskMap { blocks: vec![ vec![Some(0); 1], vec![Some(2); 2], vec![Some(1); 3], vec![Some(2); 3], vec![None; 6], ] .into_iter() .flatten() .collect(), files: vec![ File { id: 0, size: 1 }, File { id: 1, size: 3 }, File { id: 2, size: 5 }, ], },)]
+    #[case(SMALL_SAMPLE2.parse().unwrap(), SMALL_SAMPLE2.parse().unwrap())]
+    #[case(LARGER_SAMPLE.parse().unwrap(), DiskMap { blocks: vec![ vec![Some(0); 2], vec![Some(9); 2], vec![Some(8); 1], vec![Some(1); 3], vec![Some(8); 3], vec![Some(2); 1], vec![Some(7); 3], vec![Some(3); 3], vec![Some(6); 1], vec![Some(4); 2], vec![Some(6); 1], vec![Some(5); 4], vec![Some(6); 2], vec![None; 14], ] .into_iter() .flatten() .collect(), files: vec![ File { id: 0, size: 2 }, File { id: 1, size: 3 }, File { id: 2, size: 1 }, File { id: 3, size: 3 }, File { id: 4, size: 2 }, File { id: 5, size: 4 }, File { id: 6, size: 4 }, File { id: 7, size: 3 }, File { id: 8, size: 4 }, File { id: 9, size: 2 }, ], },)]
+    fn rearrange(#[case] input: DiskMap, #[case] expected: DiskMap) {
+        let mut modifiable_map = input;
+        modifiable_map.rearrange();
+        assert_eq!(expected.files.len(), modifiable_map.files.len());
+        assert_eq!(expected, modifiable_map);
     }
 
-    #[test]
-    fn rearrange_no_fragmentation() {
-        let disk_map_pairs: Vec<(DiskMap, DiskMap)> = vec![
-            (
-                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
-                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
-            ),
-            (
-                super::super::tests::LARGER_SAMPLE.parse().unwrap(),
-                DiskMap {
-                    blocks: vec![
-                        vec![Some(0); 2],
-                        vec![Some(9); 2],
-                        vec![Some(2); 1],
-                        vec![Some(1); 3],
-                        vec![Some(7); 3],
-                        vec![None; 1],
-                        vec![Some(4); 2],
-                        vec![None; 1],
-                        vec![Some(3); 3],
-                        vec![None; 4],
-                        vec![Some(5); 4],
-                        vec![None; 1],
-                        vec![Some(6); 4],
-                        vec![None; 5],
-                        vec![Some(8); 4],
-                        vec![None; 2],
-                    ]
-                    .into_iter()
-                    .flatten()
-                    .collect(),
-                    files: vec![
-                        File { id: 0, size: 2 },
-                        File { id: 1, size: 3 },
-                        File { id: 2, size: 1 },
-                        File { id: 3, size: 3 },
-                        File { id: 4, size: 2 },
-                        File { id: 5, size: 4 },
-                        File { id: 6, size: 4 },
-                        File { id: 7, size: 3 },
-                        File { id: 8, size: 4 },
-                        File { id: 9, size: 2 },
-                    ],
-                },
-            ),
-        ];
-        for (mut modifiable_map, expected_map) in disk_map_pairs {
-            modifiable_map.rearrange_no_fragmentation();
-            assert_eq!(expected_map.files.len(), modifiable_map.files.len());
-            assert_eq!(expected_map, modifiable_map);
-        }
+    #[rstest]
+    #[case(SMALL_SAMPLE2.parse().unwrap(), SMALL_SAMPLE2.parse().unwrap())]
+    #[case(LARGER_SAMPLE.parse().unwrap(), DiskMap { blocks: vec![ vec![Some(0); 2], vec![Some(9); 2], vec![Some(2); 1], vec![Some(1); 3], vec![Some(7); 3], vec![None; 1], vec![Some(4); 2], vec![None; 1], vec![Some(3); 3], vec![None; 4], vec![Some(5); 4], vec![None; 1], vec![Some(6); 4], vec![None; 5], vec![Some(8); 4], vec![None; 2], ] .into_iter() .flatten() .collect(), files: vec![ File { id: 0, size: 2 }, File { id: 1, size: 3 }, File { id: 2, size: 1 }, File { id: 3, size: 3 }, File { id: 4, size: 2 }, File { id: 5, size: 4 }, File { id: 6, size: 4 }, File { id: 7, size: 3 }, File { id: 8, size: 4 }, File { id: 9, size: 2 }, ], })]
+    fn rearrange_no_fragmentation(#[case] input: DiskMap, #[case] expected: DiskMap) {
+        let mut modifiable_map = input;
+        modifiable_map.rearrange_no_fragmentation();
+        assert_eq!(expected.files.len(), modifiable_map.files.len());
+        assert_eq!(expected, modifiable_map);
     }
 
-    #[test]
-    fn checksum() {
-        let map_checksum_pairs: Vec<(DiskMap, usize)> = vec![
-            (
-                super::super::tests::SMALL_SAMPLE1.parse().unwrap(),
-                0 * 0 + 3 * 1 + 4 * 1 + 5 * 1 + 10 * 2 + 11 * 2 + 12 * 2 + 13 * 2 + 14 * 2,
-            ),
-            (
-                super::super::tests::SMALL_SAMPLE2.parse().unwrap(),
-                0 * 0
-                    + 1 * 0
-                    + 2 * 0
-                    + 3 * 0
-                    + 4 * 0
-                    + 5 * 0
-                    + 6 * 0
-                    + 7 * 0
-                    + 8 * 0
-                    + 9 * 1
-                    + 10 * 1
-                    + 11 * 1
-                    + 12 * 1
-                    + 13 * 1
-                    + 14 * 1
-                    + 15 * 1
-                    + 16 * 1
-                    + 17 * 1
-                    + 18 * 2
-                    + 19 * 2
-                    + 20 * 2
-                    + 21 * 2
-                    + 22 * 2
-                    + 23 * 2
-                    + 24 * 2
-                    + 25 * 2
-                    + 26 * 2,
-            ),
-        ];
-        for (map, checksum) in map_checksum_pairs {
-            assert_eq!(map.get_check_sum().unwrap(), checksum);
-        }
+    #[rstest]
+    #[case(SMALL_SAMPLE1.parse().unwrap(), 132)]
+    #[case(SMALL_SAMPLE2.parse().unwrap(), 513)]
+    fn checksum(#[case] input: DiskMap, #[case] expected: usize) {
+        assert_eq!(expected, input.get_check_sum().unwrap());
     }
 }

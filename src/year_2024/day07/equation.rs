@@ -3,21 +3,12 @@ use super::error::Error;
 use super::operation_selection::*;
 
 #[derive(Debug, PartialEq)]
-pub struct Equation<
-    T: CheckedOp + std::str::FromStr + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
-> {
+pub struct Equation<T> {
     pub expected: T,
     pub test_values: Vec<T>,
 }
 
-impl<
-        T: CheckedOp
-            + std::str::FromStr
-            + std::cmp::PartialEq
-            + std::cmp::PartialOrd
-            + std::clone::Clone,
-    > std::str::FromStr for Equation<T>
-{
+impl<T: std::str::FromStr> std::str::FromStr for Equation<T> {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -51,14 +42,7 @@ impl<
     }
 }
 
-impl<
-        T: CheckedOp
-            + std::str::FromStr
-            + std::cmp::PartialEq
-            + std::cmp::PartialOrd
-            + std::clone::Clone,
-    > Equation<T>
-{
+impl<T: CheckedOp + PartialEq + Clone> Equation<T> {
     pub fn is_solvable_add_mul(&self) -> bool {
         let len = self.test_values.len();
         if len == 1usize {
@@ -127,124 +111,75 @@ impl<
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::Equation;
     use super::Error;
 
-    #[test]
-    fn parse() {
-        assert_eq!(
-            "190: 10 19".parse::<Equation<u8>>(),
-            Ok(Equation::<u8> {
-                expected: 190u8,
-                test_values: vec![10u8, 19u8]
-            })
-        );
-        assert_eq!(
-            "3267: 81 40 27".parse::<Equation<u8>>(),
-            Err(Error::IntegerTypeTooSmall)
-        );
-        assert_eq!(
-            "3267: 81 40 27".parse::<Equation<u16>>(),
-            Ok(Equation::<u16> {
-                expected: 3267u16,
-                test_values: vec![81u16, 40u16, 27u16]
-            })
-        );
-        assert_eq!(
-            "161011: 16 10 13".parse::<Equation<u8>>(),
-            Err(Error::IntegerTypeTooSmall)
-        );
-        assert_eq!(
-            "161011: 16 10 13".parse::<Equation<u16>>(),
-            Err(Error::IntegerTypeTooSmall)
-        );
-        assert_eq!(
-            "161011: 16 10 13".parse::<Equation<u32>>(),
-            Ok(Equation::<u32> {
-                expected: 161011u32,
-                test_values: vec![16u32, 10u32, 13u32]
-            })
-        );
-        assert_eq!("123:".parse::<Equation<u8>>(), Err(Error::ParsingFailed));
+    #[rstest]
+    #[case("190: 10 19", Ok(Equation::<u8> { expected: 190u8, test_values: vec![10u8, 19u8] }))]
+    #[case("3267: 81 40 27", Err(Error::IntegerTypeTooSmall))]
+    #[case("161011: 16 10 13", Err(Error::IntegerTypeTooSmall))]
+    #[case("123", Err(Error::ParsingFailed))]
+    fn parse_u8(#[case] input: &str, #[case] expected: Result<Equation<u8>, Error>) {
+        assert_eq!(expected, input.parse())
     }
 
-    #[test]
-    fn check_solvable() {
-        assert!("190: 10 19"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!("3267: 81 40 27"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"83: 17 5"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"156: 15 6"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"7290: 6 8 6 15"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"161011: 16 10 13"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"192: 17 8 14"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!(!"21037: 9 7 18 13"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
-        assert!("292: 11 6 16 20"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul());
+    #[rstest]
+    #[case("190: 10 19", Ok(Equation::<u16> { expected: 190u16, test_values: vec![10u16, 19u16] }))]
+    #[case("3267: 81 40 27", Ok(Equation::<u16> { expected: 3267u16, test_values: vec![81u16, 40u16, 27u16] }))]
+    #[case("161011: 16 10 13", Err(Error::IntegerTypeTooSmall))]
+    #[case("123", Err(Error::ParsingFailed))]
+    fn parse_u16(#[case] input: &str, #[case] expected: Result<Equation<u16>, Error>) {
+        assert_eq!(expected, input.parse())
     }
 
-    #[test]
-    fn check_solvable_with_concat() {
-        assert!("190: 10 19"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!("3267: 81 40 27"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!(!"83: 17 5"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!("156: 15 6"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!("7290: 6 8 6 15"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!(!"161011: 16 10 13"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!("192: 17 8 14"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!(!"21037: 9 7 18 13"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
-        assert!("292: 11 6 16 20"
-            .parse::<Equation<usize>>()
-            .unwrap()
-            .is_solvable_add_mul_concat());
+    #[rstest]
+    #[case("190: 10 19", Ok(Equation::<u32> { expected: 190u32, test_values: vec![10u32, 19u32] }))]
+    #[case("3267: 81 40 27", Ok(Equation::<u32> { expected: 3267u32, test_values: vec![81u32, 40u32, 27u32] }))]
+    #[case("161011: 16 10 13", Ok(Equation::<u32> { expected: 161011u32, test_values: vec![16u32, 10u32, 13u32] }))]
+    #[case("123", Err(Error::ParsingFailed))]
+    fn parse_u32(#[case] input: &str, #[case] expected: Result<Equation<u32>, Error>) {
+        assert_eq!(expected, input.parse())
+    }
+
+    #[rstest]
+    #[case("190: 10 19", true)]
+    #[case("3267: 81 40 27", true)]
+    #[case("83: 17 5", false)]
+    #[case("156: 15 6", false)]
+    #[case("7290: 6 8 6 15", false)]
+    #[case("161011: 16 10 13", false)]
+    #[case("192: 17 8 14", false)]
+    #[case("21037: 9 7 18 13", false)]
+    #[case("292: 11 6 16 20", true)]
+    fn check_solvable(#[case] input: &str, #[case] expected: bool) {
+        assert_eq!(
+            expected,
+            input
+                .parse::<Equation<usize>>()
+                .unwrap()
+                .is_solvable_add_mul()
+        )
+    }
+
+    #[rstest]
+    #[case("190: 10 19", true)]
+    #[case("3267: 81 40 27", true)]
+    #[case("83: 17 5", false)]
+    #[case("156: 15 6", true)]
+    #[case("7290: 6 8 6 15", true)]
+    #[case("161011: 16 10 13", false)]
+    #[case("192: 17 8 14", true)]
+    #[case("21037: 9 7 18 13", false)]
+    #[case("292: 11 6 16 20", true)]
+    fn check_solvable_with_concat(#[case] input: &str, #[case] expected: bool) {
+        assert_eq!(
+            expected,
+            input
+                .parse::<Equation<usize>>()
+                .unwrap()
+                .is_solvable_add_mul_concat()
+        )
     }
 }

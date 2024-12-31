@@ -49,41 +49,40 @@ pub fn get_enumeration_vector(unsigned_integer: u32, len: usize) -> Result<Vec<O
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::get_bit_vector;
     use super::get_enumeration_vector;
     use super::Error;
     use super::Operation;
 
-    #[test]
-    fn generate_bit_vector() {
-        assert_eq!(get_bit_vector(1, 4), Ok(vec![true, false, false, false]));
-        assert_eq!(get_bit_vector(5, 4), Ok(vec![true, false, true, false]));
-        assert_eq!(get_bit_vector(5, 2), Err(Error::BitFieldGeneration));
+    #[rstest]
+    #[case(1, 4, Ok(vec![true, false, false, false]))]
+    #[case(5, 4, Ok(vec![true, false, true, false]))]
+    #[case(5, 2, Err(Error::BitFieldGeneration))]
+    fn generate_bit_vector(
+        #[case] value_to_encode: usize,
+        #[case] target_vector_size: usize,
+        #[case] expected: Result<Vec<bool>, Error>,
+    ) {
+        assert_eq!(
+            expected,
+            get_bit_vector(value_to_encode, target_vector_size)
+        )
     }
 
-    #[test]
-    fn generate_enumeration_vector() {
+    #[rstest]
+    #[case(5, 4, Ok(vec![ Operation::Concatination, Operation::Addition, Operation::Multiplication, Operation::Multiplication ]))]
+    #[case(6, 4, Ok(vec![ Operation::Multiplication, Operation::Concatination, Operation::Multiplication, Operation::Multiplication ]))]
+    #[case(27, 2, Err(Error::EnumerationFieldGeneration))]
+    fn generate_enumeration_vector(
+        #[case] value_to_encode: u32,
+        #[case] target_vector_size: usize,
+        #[case] expected: Result<Vec<Operation>, Error>,
+    ) {
         assert_eq!(
-            get_enumeration_vector(5, 4),
-            Ok(vec![
-                Operation::Concatination,
-                Operation::Addition,
-                Operation::Multiplication,
-                Operation::Multiplication
-            ])
-        );
-        assert_eq!(
-            get_enumeration_vector(6, 4),
-            Ok(vec![
-                Operation::Multiplication,
-                Operation::Concatination,
-                Operation::Multiplication,
-                Operation::Multiplication
-            ])
-        );
-        assert_eq!(
-            get_enumeration_vector(27, 2),
-            Err(Error::EnumerationFieldGeneration)
-        );
+            expected,
+            get_enumeration_vector(value_to_encode, target_vector_size)
+        )
     }
 }

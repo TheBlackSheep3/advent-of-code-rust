@@ -179,6 +179,8 @@ fn get_shape_score(shape: &RockPaperScissorsChoice) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR: &str = "A Y
@@ -221,198 +223,55 @@ mod tests {
         assert_eq!(error.line, "AY");
     }
 
-    #[test]
-    fn correct_parse1() {
-        assert_eq!(
-            parse_choices1("A X").unwrap(),
-            (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock)
-        );
-        assert_eq!(
-            parse_choices1("A Y").unwrap(),
-            (
-                RockPaperScissorsChoice::Rock,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices1("A Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Rock,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
-        assert_eq!(
-            parse_choices1("B X").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Rock
-            )
-        );
-        assert_eq!(
-            parse_choices1("B Y").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices1("B Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
-        assert_eq!(
-            parse_choices1("C X").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Rock
-            )
-        );
-        assert_eq!(
-            parse_choices1("C Y").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices1("C Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
+    #[rstest]
+    #[case("A X", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock))]
+    #[case("A Y", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Paper))]
+    #[case("A Z", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Scissors))]
+    #[case("B X", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Rock))]
+    #[case("B Y", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Paper))]
+    #[case("B Z", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Scissors))]
+    #[case("C X", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Rock))]
+    #[case("C Y", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Paper))]
+    #[case("C Z", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Scissors))]
+    fn correct_parse1(
+        #[case] input: &str,
+        #[case] expected: (RockPaperScissorsChoice, RockPaperScissorsChoice),
+    ) {
+        assert_eq!(expected, parse_choices1(input).unwrap());
     }
 
-    #[test]
-    fn correct_parse2() {
-        assert_eq!(
-            parse_choices2("A X").unwrap(),
-            (
-                RockPaperScissorsChoice::Rock,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
-        assert_eq!(
-            parse_choices2("A Y").unwrap(),
-            (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock)
-        );
-        assert_eq!(
-            parse_choices2("A Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Rock,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices2("B X").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Rock
-            )
-        );
-        assert_eq!(
-            parse_choices2("B Y").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices2("B Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Paper,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
-        assert_eq!(
-            parse_choices2("C X").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Paper
-            )
-        );
-        assert_eq!(
-            parse_choices2("C Y").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Scissors
-            )
-        );
-        assert_eq!(
-            parse_choices2("C Z").unwrap(),
-            (
-                RockPaperScissorsChoice::Scissors,
-                RockPaperScissorsChoice::Rock
-            )
-        );
+    #[rstest]
+    #[case("A X", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Scissors))]
+    #[case("A Y", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Rock))]
+    #[case("A Z", (RockPaperScissorsChoice::Rock, RockPaperScissorsChoice::Paper))]
+    #[case("B X", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Rock))]
+    #[case("B Y", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Paper))]
+    #[case("B Z", (RockPaperScissorsChoice::Paper, RockPaperScissorsChoice::Scissors))]
+    #[case("C X", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Paper))]
+    #[case("C Y", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Scissors))]
+    #[case("C Z", (RockPaperScissorsChoice::Scissors, RockPaperScissorsChoice::Rock))]
+    fn correct_parse2(
+        #[case] input: &str,
+        #[case] expected: (RockPaperScissorsChoice, RockPaperScissorsChoice),
+    ) {
+        assert_eq!(expected, parse_choices2(input).unwrap());
     }
 
-    #[test]
-    fn check_outcomes() {
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Rock,
-                &RockPaperScissorsChoice::Rock
-            ),
-            PlayerScore { left: 4, right: 4 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Rock,
-                &RockPaperScissorsChoice::Paper
-            ),
-            PlayerScore { left: 1, right: 8 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Rock,
-                &RockPaperScissorsChoice::Scissors
-            ),
-            PlayerScore { left: 7, right: 3 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Paper,
-                &RockPaperScissorsChoice::Rock
-            ),
-            PlayerScore { left: 8, right: 1 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Paper,
-                &RockPaperScissorsChoice::Paper
-            ),
-            PlayerScore { left: 5, right: 5 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Paper,
-                &RockPaperScissorsChoice::Scissors
-            ),
-            PlayerScore { left: 2, right: 9 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Scissors,
-                &RockPaperScissorsChoice::Rock
-            ),
-            PlayerScore { left: 3, right: 7 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Scissors,
-                &RockPaperScissorsChoice::Paper
-            ),
-            PlayerScore { left: 9, right: 2 }
-        );
-        assert_eq!(
-            get_score(
-                &RockPaperScissorsChoice::Scissors,
-                &RockPaperScissorsChoice::Scissors
-            ),
-            PlayerScore { left: 6, right: 6 }
-        );
+    #[rstest]
+    #[case(&RockPaperScissorsChoice::Rock, &RockPaperScissorsChoice::Rock, PlayerScore { left: 4, right: 4 })]
+    #[case(&RockPaperScissorsChoice::Rock, &RockPaperScissorsChoice::Paper, PlayerScore { left: 1, right: 8 })]
+    #[case(&RockPaperScissorsChoice::Rock, &RockPaperScissorsChoice::Scissors, PlayerScore { left: 7, right: 3 })]
+    #[case(&RockPaperScissorsChoice::Paper, &RockPaperScissorsChoice::Rock, PlayerScore { left: 8, right: 1 })]
+    #[case(&RockPaperScissorsChoice::Paper, &RockPaperScissorsChoice::Paper, PlayerScore { left: 5, right: 5 })]
+    #[case(&RockPaperScissorsChoice::Paper, &RockPaperScissorsChoice::Scissors, PlayerScore { left: 2, right: 9 })]
+    #[case(&RockPaperScissorsChoice::Scissors, &RockPaperScissorsChoice::Rock, PlayerScore { left: 3, right: 7 })]
+    #[case(&RockPaperScissorsChoice::Scissors, &RockPaperScissorsChoice::Paper, PlayerScore { left: 9, right: 2 })]
+    #[case(&RockPaperScissorsChoice::Scissors, &RockPaperScissorsChoice::Scissors, PlayerScore { left: 6, right: 6 })]
+    fn check_outcomes(
+        #[case] choice_player_one: &RockPaperScissorsChoice,
+        #[case] choice_player_two: &RockPaperScissorsChoice,
+        #[case] expected: PlayerScore,
+    ) {
+        assert_eq!(expected, get_score(choice_player_one, choice_player_two));
     }
 }

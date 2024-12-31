@@ -43,12 +43,20 @@ checkedop_impl!(isize);
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+    use std::fmt::Debug;
+
     use super::CheckedOp;
 
-    #[test]
-    fn interger_concatinate() {
-        assert_eq!(1u32.concat(2u32), Some(12u32));
-        assert_eq!(56u8.concat(1u8), None);
-        assert_eq!(809u32.concat(99u32), Some(80999u32));
+    #[rstest]
+    #[case(1u32, 2u32, Some(12u32))]
+    #[case(56u8, 1u8, None)]
+    #[case(809u32, 99u32, Some(80999u32))]
+    fn interger_concatinate<T: CheckedOp + Debug + PartialEq>(
+        #[case] a: T,
+        #[case] b: T,
+        #[case] expected: Option<T>,
+    ) {
+        assert_eq!(expected, a.concat(b))
     }
 }

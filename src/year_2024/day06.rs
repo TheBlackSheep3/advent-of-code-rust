@@ -259,6 +259,8 @@ pub fn count_loop_positions(input: &str) -> Result<usize, Error> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR: &str = "....#.....
@@ -343,24 +345,20 @@ mod tests {
         );
     }
 
-    #[test]
-    fn loop_test() {
-        let map: Map = TEST_STR.parse().unwrap();
+    #[rstest]
+    #[case((3usize, 6usize))]
+    #[case((6usize, 7usize))]
+    #[case((7usize, 7usize))]
+    #[case((1usize, 8usize))]
+    #[case((3usize, 8usize))]
+    #[case((7usize, 9usize))]
+    fn loop_test(#[case] obstacle_position: (usize, usize)) {
+        let mut map: Map = TEST_STR.parse().unwrap();
         assert!(!map.clone().loops());
-        for o in [
-            (3usize, 6usize),
-            (6usize, 7usize),
-            (7usize, 7usize),
-            (1usize, 8usize),
-            (3usize, 8usize),
-            (7usize, 9usize),
-        ] {
-            let mut map = map.clone();
-            if !map.obstacles.insert(o) {
-                panic!("obstacle already present");
-            }
-            assert!(map.loops());
+        if !map.obstacles.insert(obstacle_position) {
+            panic!("obstacle already present");
         }
+        assert!(map.loops());
     }
 
     #[test]

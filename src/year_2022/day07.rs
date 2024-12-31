@@ -142,6 +142,8 @@ impl File {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_INPUT: &str = "$ cd /
@@ -169,66 +171,81 @@ $ ls
 7214296 k";
 
     fn get_parsed_test_input() -> Directory<'static> {
-        let mut e = Directory::new("e");
-        let i = File::new(584);
-        e.add_file(i);
-        let mut a = Directory::new("a");
-        a.add_dir(e);
-        let f = File::new(29116);
-        a.add_file(f);
-        let g = File::new(2557);
-        a.add_file(g);
-        let h = File::new(62596);
-        a.add_file(h);
-        let mut d = Directory::new("d");
-        let j = File::new(4060174);
-        d.add_file(j);
-        let dlog = File::new(8033020);
-        d.add_file(dlog);
-        let dext = File::new(5626152);
-        d.add_file(dext);
-        let k = File::new(7214296);
-        d.add_file(k);
-        let mut root = Directory::new("/");
-        root.add_dir(a);
-        root.add_dir(d);
-        let b = File::new(14848514);
-        root.add_file(b);
-        let c = File::new(8504156);
-        root.add_file(c);
+        let e = Directory {
+            name: "e",
+            files: vec![File { size: 584 }],
+            directories: vec![],
+        };
+        let a = Directory {
+            name: "a",
+            files: vec![
+                File { size: 29116 },
+                File { size: 2557 },
+                File { size: 62596 },
+            ],
+            directories: vec![Directory {
+                name: "e",
+                files: vec![File { size: 584 }],
+                directories: vec![],
+            }],
+        };
+        let d = Directory {
+            name: "d",
+            files: vec![
+                File { size: 4060174 },
+                File { size: 8033020 },
+                File { size: 5626152 },
+                File { size: 7214296 },
+            ],
+            directories: vec![],
+        };
+        let root = Directory {
+            name: "/",
+            files: vec![File { size: 14848514 }, File { size: 8504156 }],
+            directories: vec![
+                Directory {
+                    name: "a",
+                    files: vec![
+                        File { size: 29116 },
+                        File { size: 2557 },
+                        File { size: 62596 },
+                    ],
+                    directories: vec![Directory {
+                        name: "e",
+                        files: vec![File { size: 584 }],
+                        directories: vec![],
+                    }],
+                },
+                Directory {
+                    name: "d",
+                    files: vec![
+                        File { size: 4060174 },
+                        File { size: 8033020 },
+                        File { size: 5626152 },
+                        File { size: 7214296 },
+                    ],
+                    directories: vec![],
+                },
+            ],
+        };
         root
     }
 
-    #[test]
-    fn get_size() {
-        let mut root = Directory::new("root");
-        let f = File { size: usize::MAX };
-        root.add_file(f.clone());
-        assert_eq!(root.get_size(), Some(usize::MAX));
-        root.add_file(f);
-        assert_eq!(root.get_size(), None);
-        root.clear_files();
-        assert_eq!(root.get_size(), Some(0));
-        let mut dir1 = Directory::new("1");
-        let f = File { size: 297 };
-        dir1.add_file(f);
-        let f = File { size: 92 };
-        dir1.add_file(f);
-        let mut dir2 = Directory::new("2");
-        assert_eq!(dir1.get_size(), Some(389));
-        let f = File { size: 201 };
-        dir2.add_file(f);
-        let f = File { size: 927 };
-        dir2.add_file(f);
-        assert_eq!(dir2.get_size(), Some(1128));
-        dir1.add_dir(dir2);
-        assert_eq!(dir1.get_size(), Some(1517));
-        root.add_dir(dir1);
-        assert_eq!(root.get_size(), Some(1517));
+    #[rstest]
+    #[case(Directory{ name: "root", files: vec![], directories: vec![]}, Some(0))]
+    #[case(Directory{ name: "root", files: vec![File { size: usize::MAX }], directories: vec![]}, Some(usize::MAX))]
+    #[case(Directory{ name: "root", files: vec![File { size: usize::MAX }, File { size: usize::MAX }], directories: vec![] }, None)]
+    #[case(Directory{ name: "1", files: vec![File { size: 297 }, File { size: 92 }], directories: vec![] }, Some(389))]
+    #[case(Directory{ name: "2", files: vec![File { size: 201 }, File { size: 927 }], directories: vec![] }, Some(1128))]
+    #[case(Directory{ name: "1", files: vec![File { size: 297 }, File { size: 92 }], directories: vec![ Directory{ name: "2", files: vec![File { size: 201 }, File { size: 927 } ], directories: vec![] }] }, Some(1517))]
+    #[case(Directory{ name: "root", files: vec![], directories: vec![ Directory{ name: "1", files: vec![File { size: 297 }, File { size: 92 }], directories: vec![ Directory{ name: "2", files: vec![File { size: 201 }, File { size: 927 } ], directories: vec![] }] } ]}, Some(1517))]
+    fn get_size(#[case] directory: Directory, #[case] expected: Option<usize>) {
+        assert_eq!(expected, directory.get_size())
     }
 
     // TODO: reenable test and get it to succeed
-    // #[test]
+    #[ignore = "implementation isn't ready yet"]
+    #[test]
     fn parse() {
         assert_eq!(
             parse_file_structure(TEST_INPUT),
@@ -236,16 +253,16 @@ $ ls
         );
     }
 
-    #[test]
-    fn get_size_maxsum() {
-        const MAX_SIZE: usize = 100_000;
-        let root = get_parsed_test_input();
-        let a = root.get_child_by_name("a").unwrap();
-        let e = a.get_child_by_name("e").unwrap();
-        let d = root.get_child_by_name("d").unwrap();
-        assert_eq!(e.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(584));
-        assert_eq!(a.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(95437));
-        assert_eq!(d.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(0));
-        assert_eq!(root.get_sum_of_dirs_with_max_size(MAX_SIZE), Some(95437));
+    #[rstest]
+    #[case(Directory { name: "/", files: vec![File { size: 14848514 }, File { size: 8504156 }], directories: vec![ Directory { name: "a", files: vec![ File { size: 29116 }, File { size: 2557 }, File { size: 62596 }, ], directories: vec![Directory { name: "e", files: vec![File { size: 584 }], directories: vec![], }], }, Directory { name: "d", files: vec![ File { size: 4060174 }, File { size: 8033020 }, File { size: 5626152 }, File { size: 7214296 }, ], directories: vec![], }, ], }, 100_000, Some(95437))]
+    #[case(Directory { name: "a", files: vec![ File { size: 29116 }, File { size: 2557 }, File { size: 62596 }, ], directories: vec![Directory { name: "e", files: vec![File { size: 584 }], directories: vec![], }], }, 100_000, Some(95437))]
+    #[case(Directory { name: "e", files: vec![File { size: 584 }], directories: vec![], }, 100_000, Some(584))]
+    #[case(Directory { name: "d", files: vec![ File { size: 4060174 }, File { size: 8033020 }, File { size: 5626152 }, File { size: 7214296 }, ], directories: vec![], }, 100_000, Some(0))]
+    fn get_size_maxsum(
+        #[case] directory: Directory,
+        #[case] max_size: usize,
+        #[case] expected: Option<usize>,
+    ) {
+        assert_eq!(expected, directory.get_sum_of_dirs_with_max_size(max_size));
     }
 }

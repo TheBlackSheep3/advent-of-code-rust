@@ -69,6 +69,8 @@ pub fn parse_and_execute_multiplication_with_conditionals(instructions: &str) ->
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR1: &str =
@@ -84,14 +86,15 @@ mod tests {
     const INVALID_STR3: &str = "?(12,34)";
     const INVALID_STR4: &str = "mul ( 2 , 4 )";
 
-    #[test]
-    fn parse_and_multiply_simple_examples() {
-        assert_eq!(parse_and_execute_multiplication(VALID_STR1), Some(44 * 46));
-        assert_eq!(parse_and_execute_multiplication(VALID_STR2), Some(123 * 4));
-        assert_eq!(parse_and_execute_multiplication(INVALID_STR1), None);
-        assert_eq!(parse_and_execute_multiplication(INVALID_STR2), None);
-        assert_eq!(parse_and_execute_multiplication(INVALID_STR3), None);
-        assert_eq!(parse_and_execute_multiplication(INVALID_STR4), None);
+    #[rstest]
+    #[case(VALID_STR1, Some(44 * 46))]
+    #[case(VALID_STR2, Some(123 * 4))]
+    #[case(INVALID_STR1, None)]
+    #[case(INVALID_STR2, None)]
+    #[case(INVALID_STR3, None)]
+    #[case(INVALID_STR4, None)]
+    fn parse_and_multiply_simple_examples(#[case] input: &str, #[case] expected: Option<u32>) {
+        assert_eq!(expected, parse_and_execute_multiplication(input));
     }
 
     #[test]

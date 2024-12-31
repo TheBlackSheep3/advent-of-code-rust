@@ -178,23 +178,13 @@ impl Iterator for AntinodeIterator {
             }
             None => None,
         }
-        // match (self.iteration_function)(&self.current_position, &self.difference)
-        //     .filter(|p| p.is_within_size(&self.map_size))
-        // {
-        //     Some(position) => {
-        //         self.current_position = position.clone();
-        //         Some(Antinode {
-        //             position,
-        //             frequency: self.frequency,
-        //         })
-        //     }
-        //     None => None,
-        // }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use crate::year_2024::day08::tests::TEST_STR;
 
     use super::*;
@@ -315,221 +305,14 @@ mod tests {
         assert_eq!(actual_antinodes, expected_antinodes)
     }
 
-    #[test]
-    fn antinode_resonant_harmonics() {
-        const TEST_INPUT: &str = "T....#....
-...T......
-.T....#...
-.........#
-..#.......
-..........
-...#......
-..........
-....#.....
-..........";
-
-        let x = vec![
-            (
-                TEST_INPUT.parse::<Map>().expect("parsing failed"),
-                vec![
-                    Antinode {
-                        position: Position { x: 0, y: 0 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 1 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 1, y: 2 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 5, y: 0 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 6, y: 2 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 9, y: 3 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 2, y: 4 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 6 },
-                        frequency: 'T',
-                    },
-                    Antinode {
-                        position: Position { x: 4, y: 8 },
-                        frequency: 'T',
-                    },
-                ],
-            ),
-            (
-                TEST_STR.parse::<Map>().expect("parsing failed"),
-                vec![
-                    Antinode {
-                        position: Position { x: 8, y: 1 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 5, y: 2 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 7, y: 3 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 4, y: 4 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 6, y: 5 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 8, y: 8 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 9, y: 9 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 0, y: 0 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 0, y: 7 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 1, y: 0 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 1, y: 1 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 1, y: 5 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 1, y: 10 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 2, y: 2 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 2, y: 3 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 2, y: 8 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 1 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 1 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 3 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 6 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 3, y: 11 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 4, y: 2 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 4, y: 4 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 4, y: 9 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 5, y: 5 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 5, y: 7 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 6, y: 0 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 6, y: 5 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 6, y: 6 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 7, y: 7 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 9, y: 4 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 10, y: 2 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 10, y: 10 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 10, y: 11 },
-                        frequency: 'A',
-                    },
-                    Antinode {
-                        position: Position { x: 11, y: 0 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 11, y: 5 },
-                        frequency: '0',
-                    },
-                    Antinode {
-                        position: Position { x: 11, y: 11 },
-                        frequency: 'A',
-                    },
-                ],
-            ),
-        ];
-        for (map, expected_antinodes) in x {
-            let actual_antinodes = map.get_antinodes_resonant_harmonics();
-            let expected_antinodes = expected_antinodes.into_iter().collect::<HashSet<_>>();
-            let actual_antinodes = actual_antinodes.into_iter().collect::<HashSet<_>>();
-            assert_eq!(expected_antinodes.len(), actual_antinodes.len());
-            assert_eq!(expected_antinodes, actual_antinodes);
-        }
+    #[rstest]
+    #[case("T....#....\n...T......\n.T....#...\n.........#\n..#.......\n..........\n...#......\n..........\n....#.....\n..........".parse::<Map>().expect("parsing failed"), vec![ Antinode { position: Position { x: 0, y: 0 }, frequency: 'T', }, Antinode { position: Position { x: 3, y: 1 }, frequency: 'T', }, Antinode { position: Position { x: 1, y: 2 }, frequency: 'T', }, Antinode { position: Position { x: 5, y: 0 }, frequency: 'T', }, Antinode { position: Position { x: 6, y: 2 }, frequency: 'T', }, Antinode { position: Position { x: 9, y: 3 }, frequency: 'T', }, Antinode { position: Position { x: 2, y: 4 }, frequency: 'T', }, Antinode { position: Position { x: 3, y: 6 }, frequency: 'T', }, Antinode { position: Position { x: 4, y: 8 }, frequency: 'T', }, ])]
+    #[case(TEST_STR.parse::<Map>().expect("parsing failed"), vec![ Antinode { position: Position { x: 8, y: 1 }, frequency: '0', }, Antinode { position: Position { x: 5, y: 2 }, frequency: '0', }, Antinode { position: Position { x: 7, y: 3 }, frequency: '0', }, Antinode { position: Position { x: 4, y: 4 }, frequency: '0', }, Antinode { position: Position { x: 6, y: 5 }, frequency: 'A', }, Antinode { position: Position { x: 8, y: 8 }, frequency: 'A', }, Antinode { position: Position { x: 9, y: 9 }, frequency: 'A', }, Antinode { position: Position { x: 0, y: 0 }, frequency: 'A', }, Antinode { position: Position { x: 0, y: 7 }, frequency: '0', }, Antinode { position: Position { x: 1, y: 0 }, frequency: '0', }, Antinode { position: Position { x: 1, y: 1 }, frequency: 'A', }, Antinode { position: Position { x: 1, y: 5 }, frequency: '0', }, Antinode { position: Position { x: 1, y: 10 }, frequency: '0', }, Antinode { position: Position { x: 2, y: 2 }, frequency: 'A', }, Antinode { position: Position { x: 2, y: 3 }, frequency: '0', }, Antinode { position: Position { x: 2, y: 8 }, frequency: '0', }, Antinode { position: Position { x: 3, y: 1 }, frequency: '0', }, Antinode { position: Position { x: 3, y: 1 }, frequency: 'A', }, Antinode { position: Position { x: 3, y: 3 }, frequency: 'A', }, Antinode { position: Position { x: 3, y: 6 }, frequency: '0', }, Antinode { position: Position { x: 3, y: 11 }, frequency: '0', }, Antinode { position: Position { x: 4, y: 2 }, frequency: 'A', }, Antinode { position: Position { x: 4, y: 4 }, frequency: 'A', }, Antinode { position: Position { x: 4, y: 9 }, frequency: '0', }, Antinode { position: Position { x: 5, y: 5 }, frequency: 'A', }, Antinode { position: Position { x: 5, y: 7 }, frequency: '0', }, Antinode { position: Position { x: 6, y: 0 }, frequency: '0', }, Antinode { position: Position { x: 6, y: 5 }, frequency: '0', }, Antinode { position: Position { x: 6, y: 6 }, frequency: 'A', }, Antinode { position: Position { x: 7, y: 7 }, frequency: 'A', }, Antinode { position: Position { x: 9, y: 4 }, frequency: '0', }, Antinode { position: Position { x: 10, y: 2 }, frequency: '0', }, Antinode { position: Position { x: 10, y: 10 }, frequency: 'A', }, Antinode { position: Position { x: 10, y: 11 }, frequency: 'A', }, Antinode { position: Position { x: 11, y: 0 }, frequency: '0', }, Antinode { position: Position { x: 11, y: 5 }, frequency: '0', }, Antinode { position: Position { x: 11, y: 11 }, frequency: 'A', }, ],)]
+    fn antinode_resonant_harmonics(#[case] map: Map, #[case] expected: Vec<Antinode>) {
+        let actual_antinodes = map.get_antinodes_resonant_harmonics();
+        let expected_antinodes = expected.into_iter().collect::<HashSet<_>>();
+        let actual_antinodes = actual_antinodes.into_iter().collect::<HashSet<_>>();
+        assert_eq!(expected_antinodes.len(), actual_antinodes.len());
+        assert_eq!(expected_antinodes, actual_antinodes);
     }
 }

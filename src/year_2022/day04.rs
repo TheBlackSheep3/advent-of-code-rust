@@ -47,6 +47,8 @@ fn is_range_overlapping(first: RangeInclusive<i32>, second: RangeInclusive<i32>)
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_INPUT: &str = "2-4,6-8
@@ -66,19 +68,35 @@ mod tests {
         assert_eq!(get_overlapping_pair_count(TEST_INPUT), Some(4));
     }
 
-    #[test]
-    fn overlapping() {
-        assert!(is_range_overlapping(1..=6, 3..=6));
-        assert!(is_range_overlapping(1..=5, 3..=6));
-        assert!(!is_range_overlapping(1..=2, 3..=6));
-        assert!(is_range_overlapping(3..=6, 1..=6));
+    #[rstest]
+    #[case(1..=6, 3..=6, true)]
+    #[case(1..=5, 3..=6, true)]
+    #[case(3..=6, 1..=6, true)]
+    #[case(1..=2, 3..=6, false)]
+    fn overlapping(
+        #[case] first_inclusive_range: RangeInclusive<i32>,
+        #[case] second_inclusive_range: RangeInclusive<i32>,
+        #[case] expected: bool,
+    ) {
+        assert_eq!(
+            expected,
+            is_range_overlapping(first_inclusive_range, second_inclusive_range)
+        )
     }
 
-    #[test]
-    fn contained() {
-        assert!(is_range_contained(1..=6, 3..=6));
-        assert!(!is_range_contained(1..=5, 3..=6));
-        assert!(!is_range_contained(1..=2, 3..=6));
-        assert!(is_range_contained(3..=6, 1..=6));
+    #[rstest]
+    #[case(1..=6, 3..=6, true)]
+    #[case(3..=6, 1..=6, true)]
+    #[case(1..=5, 3..=6, false)]
+    #[case(1..=2, 3..=6, false)]
+    fn contained(
+        #[case] first_inclusive_range: RangeInclusive<i32>,
+        #[case] second_inclusive_range: RangeInclusive<i32>,
+        #[case] expected: bool,
+    ) {
+        assert_eq!(
+            expected,
+            is_range_contained(first_inclusive_range, second_inclusive_range)
+        )
     }
 }

@@ -10,12 +10,13 @@ fn parse_report(report: &str) -> Result<Vec<u32>, ParseIntError> {
 
 fn report_is_safe(items: &Vec<u32>) -> bool {
     let zipped = items.iter().zip(items.iter().skip(1));
-    zipped.len() > 0 &&(zipped
-        .clone()
-        .fold(true, |acc, (one, two)| acc && (one > two))
-        || zipped
+    zipped.len() > 0
+        && (zipped
             .clone()
-            .fold(true, |acc, (one, two)| acc && (one < two)))
+            .fold(true, |acc, (one, two)| acc && (one > two))
+            || zipped
+                .clone()
+                .fold(true, |acc, (one, two)| acc && (one < two)))
         && zipped.clone().fold(true, |acc, (one, two)| {
             let diff: u32 = one.abs_diff(*two);
             acc && (diff >= 1 && diff <= 3)
@@ -65,6 +66,8 @@ pub fn count_safe_reports_dampened(input: &str) -> Result<usize, ParseIntError> 
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR: &str = "7 6 4 2 1
@@ -74,14 +77,15 @@ mod tests {
 8 6 4 4 1
 1 3 6 7 9";
 
-    #[test]
-    fn check_is_safe() {
-        assert_eq!(is_safe("7 6 4 2 1"), Ok(true));
-        assert_eq!(is_safe("1 2 7 8 9"), Ok(false));
-        assert_eq!(is_safe("9 7 6 2 1"), Ok(false));
-        assert_eq!(is_safe("1 3 2 4 5"), Ok(false));
-        assert_eq!(is_safe("8 6 4 4 1"), Ok(false));
-        assert_eq!(is_safe("1 3 6 7 9"), Ok(true));
+    #[rstest]
+    #[case("7 6 4 2 1", Ok(true))]
+    #[case("1 2 7 8 9", Ok(false))]
+    #[case("9 7 6 2 1", Ok(false))]
+    #[case("1 3 2 4 5", Ok(false))]
+    #[case("8 6 4 4 1", Ok(false))]
+    #[case("1 3 6 7 9", Ok(true))]
+    fn check_is_safe(#[case] input: &str, #[case] expected: Result<bool, ParseIntError>) {
+        assert_eq!(expected, is_safe(input))
     }
 
     #[test]
@@ -89,14 +93,15 @@ mod tests {
         assert_eq!(count_safe_reports(TEST_STR), Ok(2));
     }
 
-    #[test]
-    fn check_is_safe_dampened() {
-        assert_eq!(is_safe_dampened("7 6 4 2 1"), Ok(true));
-        assert_eq!(is_safe_dampened("1 2 7 8 9"), Ok(false));
-        assert_eq!(is_safe_dampened("9 7 6 2 1"), Ok(false));
-        assert_eq!(is_safe_dampened("1 3 2 4 5"), Ok(true));
-        assert_eq!(is_safe_dampened("8 6 4 4 1"), Ok(true));
-        assert_eq!(is_safe_dampened("1 3 6 7 9"), Ok(true));
+    #[rstest]
+    #[case("7 6 4 2 1", Ok(true))]
+    #[case("1 2 7 8 9", Ok(false))]
+    #[case("9 7 6 2 1", Ok(false))]
+    #[case("1 3 2 4 5", Ok(true))]
+    #[case("8 6 4 4 1", Ok(true))]
+    #[case("1 3 6 7 9", Ok(true))]
+    fn check_is_safe_dampened(#[case] input: &str, #[case] expected: Result<bool, ParseIntError>) {
+        assert_eq!(expected, is_safe_dampened(input))
     }
 
     #[test]

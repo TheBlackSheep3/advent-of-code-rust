@@ -270,18 +270,34 @@ pub fn get_crossed_mas_count(input: &str) -> Result<u32, Error> {
     let pattern_backward_clone1 = pattern_backward.clone();
     let pattern_backward_clone2 = pattern_backward.clone();
     let threads = vec![
-        std::thread::spawn(move ||{
-            count_cross_pattern_match(&pattern_forward_clone1, &pattern_forward_clone1, &convert_string_into_matrix(&input_clone1)?)
+        std::thread::spawn(move || {
+            count_cross_pattern_match(
+                &pattern_forward_clone1,
+                &pattern_forward_clone1,
+                &convert_string_into_matrix(&input_clone1)?,
+            )
         }),
-        std::thread::spawn(move ||{
-            count_cross_pattern_match(&pattern_backward_clone1, &pattern_backward_clone1, &convert_string_into_matrix(&input_clone2)?)
+        std::thread::spawn(move || {
+            count_cross_pattern_match(
+                &pattern_backward_clone1,
+                &pattern_backward_clone1,
+                &convert_string_into_matrix(&input_clone2)?,
+            )
         }),
-        std::thread::spawn(move ||{
-            count_cross_pattern_match(&pattern_backward_clone2, &pattern_forward_clone2, &convert_string_into_matrix(&input_clone3)?)
+        std::thread::spawn(move || {
+            count_cross_pattern_match(
+                &pattern_backward_clone2,
+                &pattern_forward_clone2,
+                &convert_string_into_matrix(&input_clone3)?,
+            )
         }),
     ];
 
-    let result = count_cross_pattern_match(&pattern_forward, &pattern_backward, &convert_string_into_matrix(&input)?);
+    let result = count_cross_pattern_match(
+        &pattern_forward,
+        &pattern_backward,
+        &convert_string_into_matrix(&input)?,
+    );
 
     let mut results = vec![result];
 
@@ -300,6 +316,8 @@ pub fn get_crossed_mas_count(input: &str) -> Result<u32, Error> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_STR: &str = "MMMSXXMASM
@@ -318,48 +336,36 @@ MXMXAXMASX";
         assert_eq!(get_xmas_count(TEST_STR), Ok(18));
     }
 
-    #[test]
-    fn horizontal_search() {
-        let x: Vec<&str> = TEST_STR.split('\n').collect();
-        let pattern: &str = "XMAS";
-        assert_eq!(count_horizontal_matches(pattern, &x), Ok(3));
-        assert_eq!(
-            count_horizontal_matches(&pattern.chars().rev().collect::<String>(), &x),
-            Ok(2)
-        );
+    #[rstest]
+    #[case("XMAS", Ok(3))]
+    #[case("SAMX", Ok(2))]
+    fn horizontal_search(#[case] pattern: &str, #[case] expected: Result<u32, Error>) {
+        let x: Vec<&str> = TEST_STR.lines().collect();
+        assert_eq!(expected, count_horizontal_matches(pattern, &x))
     }
 
-    #[test]
-    fn vertical_search() {
-        let x: Vec<&str> = TEST_STR.split('\n').collect();
-        let pattern: &str = "XMAS";
-        assert_eq!(count_vertical_matches(pattern, &x), Ok(1));
-        assert_eq!(
-            count_vertical_matches(&pattern.chars().rev().collect::<String>(), &x),
-            Ok(2)
-        );
+    #[rstest]
+    #[case("XMAS", Ok(1))]
+    #[case("SAMX", Ok(2))]
+    fn vertical_search(#[case] pattern: &str, #[case] expected: Result<u32, Error>) {
+        let x: Vec<&str> = TEST_STR.lines().collect();
+        assert_eq!(expected, count_vertical_matches(pattern, &x))
     }
 
-    #[test]
-    fn diagonal_downward_search() {
-        let x: Vec<&str> = TEST_STR.split('\n').collect();
-        let pattern: &str = "XMAS";
-        assert_eq!(count_diagonal_downward(pattern, &x), Ok(1));
-        assert_eq!(
-            count_diagonal_downward(&pattern.chars().rev().collect::<String>(), &x),
-            Ok(4)
-        );
+    #[rstest]
+    #[case("XMAS", Ok(1))]
+    #[case("SAMX", Ok(4))]
+    fn diagonal_downward_search(#[case] pattern: &str, #[case] expected: Result<u32, Error>) {
+        let x: Vec<&str> = TEST_STR.lines().collect();
+        assert_eq!(expected, count_diagonal_downward(pattern, &x))
     }
 
-    #[test]
-    fn diagonal_upward_search() {
-        let x: Vec<&str> = TEST_STR.split('\n').collect();
-        let pattern: &str = "XMAS";
-        assert_eq!(count_diagonal_upward(pattern, &x), Ok(4));
-        assert_eq!(
-            count_diagonal_upward(&pattern.chars().rev().collect::<String>(), &x),
-            Ok(1)
-        );
+    #[rstest]
+    #[case("XMAS", Ok(4))]
+    #[case("SAMX", Ok(1))]
+    fn diagonal_upward_search(#[case] pattern: &str, #[case] expected: Result<u32, Error>) {
+        let x: Vec<&str> = TEST_STR.lines().collect();
+        assert_eq!(expected, count_diagonal_upward(pattern, &x))
     }
 
     #[test]

@@ -72,6 +72,8 @@ fn get_priority(c: char) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     const TEST_INPUT: &str = "vJrwpWtwJgWrhcsFMMfFFhFp
@@ -81,14 +83,15 @@ wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
 ttgJtRGJQctTZtZT
 CrZsJsPPZsGzwwsLwLmpwMDw";
 
-    #[test]
-    fn priority() {
-        assert_eq!(get_priority('p'), 16);
-        assert_eq!(get_priority('L'), 38);
-        assert_eq!(get_priority('P'), 42);
-        assert_eq!(get_priority('v'), 22);
-        assert_eq!(get_priority('t'), 20);
-        assert_eq!(get_priority('s'), 19);
+    #[rstest]
+    #[case('p', 16)]
+    #[case('L', 38)]
+    #[case('P', 42)]
+    #[case('v', 22)]
+    #[case('t', 20)]
+    #[case('s', 19)]
+    fn priority(#[case] character: char, #[case] expected: i32) {
+        assert_eq!(expected, get_priority(character));
     }
 
     #[test]

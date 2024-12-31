@@ -1,8 +1,7 @@
-use crate::util::position::Position;
 use super::position_diff::PositionDifference;
 use super::signed_diff::SignedDiff;
 use super::size::Size;
-
+use crate::util::position::Position;
 
 impl Position {
     pub fn get_diff(&self, other: &Self) -> Option<PositionDifference> {
@@ -45,47 +44,61 @@ impl PartialOrd for Position {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn position_diff() {
-        assert_eq!(
-            Position { x: 1, y: 2 }.get_diff(&Position { x: 0, y: 1 }),
-            Some(PositionDifference {
-                x_diff: -1,
-                y_diff: -1
-            })
-        );
-        assert_eq!(
-            Position { x: 12, y: 3 }.add_diff(
-                &Position { x: 12, y: 3 }
-                    .get_diff(&Position { x: 38, y: 99 })
-                    .unwrap()
-            ),
-            Some(Position { x: 38, y: 99 })
-        );
-        assert_eq!(
-            Position { x: 890, y: 11 }.sub_diff(
-                &Position { x: 88, y: 10 }
-                    .get_diff(&Position { x: 890, y: 11 })
-                    .unwrap()
-            ),
-            Some(Position { x: 88, y: 10 })
-        );
+    #[rstest]
+    #[case(Position { x: 1, y: 2 }, Position { x: 0, y: 1 }, Some(PositionDifference { x_diff: -1, y_diff: -1 }))]
+    #[case(Position { x: 0, y: 1 }, Position { x: 1, y: 2 }, Some(PositionDifference { x_diff: 1, y_diff: 1 }))]
+    #[case(Position { x: 1, y: 2 }, Position { x: 1, y: 2 }, Some(PositionDifference { x_diff: 0, y_diff: 0 }))]
+    #[case(Position { x: usize::MAX, y: 2 }, Position { x: 1, y: 2 }, None)]
+    #[case(Position { x: 1, y: 2 }, Position { x: usize::MAX, y: 2 }, None)]
+    #[case(Position { x: usize::MAX, y: 1 }, Position { x: usize::MAX, y: 2 }, Some(PositionDifference { x_diff: 0, y_diff: 1 }))]
+    fn position_diff(
+        #[case] position1: Position,
+        #[case] position2: Position,
+        #[case] expected: Option<PositionDifference>,
+    ) {
+        assert_eq!(expected, position1.get_diff(&position2))
     }
 
-    #[test]
-    fn bounds_check() {
-        let sample_size = Size {
-            width: 10,
-            height: 10,
-        };
-        assert_eq!(Position { x: 3, y: 8 }.is_within_size(&sample_size), true);
-        assert_eq!(Position { x: 12, y: 8 }.is_within_size(&sample_size), false);
-        assert_eq!(Position { x: 3, y: 20 }.is_within_size(&sample_size), false);
-        assert_eq!(
-            Position { x: 10, y: 10 }.is_within_size(&sample_size),
-            false
-        );
+    #[rstest]
+    #[case(Position { x: 0, y: 0 }, PositionDifference { x_diff: 9, y_diff: 2 }, Some(Position { x: 9, y: 2}))]
+    #[case(Position { x: 9, y: 2 }, PositionDifference { x_diff: 0, y_diff: 0 }, Some(Position { x: 9, y: 2}))]
+    #[case(Position { x: 9, y: 2 }, PositionDifference { x_diff: -10, y_diff: 0 }, None)]
+    #[case(Position { x: 9, y: usize::MAX }, PositionDifference { x_diff: 0, y_diff: 9 }, None)]
+    #[case(Position { x: 12, y: 3 }, Position { x: 12, y: 3 }.get_diff(&Position { x: 38, y: 99 }).unwrap(), Some(Position { x: 38, y: 99 }))]
+    fn add_position_diff(
+        #[case] position: Position,
+        #[case] position_diff: PositionDifference,
+        #[case] expected: Option<Position>,
+    ) {
+        assert_eq!(expected, position.add_diff(&position_diff))
+    }
+
+    #[rstest]
+    #[case(Position { x: 0, y: 0 }, PositionDifference { x_diff: 9, y_diff: 2 }, None)]
+    #[case(Position { x: 0, y: 0 }, PositionDifference { x_diff: -9, y_diff: -2 }, Some(Position { x: 9, y: 2}))]
+    #[case(Position { x: 10, y: 3 }, PositionDifference { x_diff: 2, y_diff: -2 }, Some(Position { x: 8, y: 5}))]
+    #[case(Position { x: 10, y: 3 }, PositionDifference { x_diff: -2, y_diff: 2 }, Some(Position { x: 12, y: 1}))]
+    #[case(Position { x: 10, y: usize::MAX }, PositionDifference { x_diff: 2, y_diff: -2 }, None)]
+    #[case(Position { x: 890, y: 11 }, Position { x: 88, y: 10 }.get_diff(&Position { x: 890, y: 11 }).unwrap(), Some(Position { x: 88, y: 10 }))]
+    fn sub_position_diff(
+        #[case] position: Position,
+        #[case] position_diff: PositionDifference,
+        #[case] expected: Option<Position>,
+    ) {
+        assert_eq!(expected, position.sub_diff(&position_diff))
+    }
+
+    #[rstest]
+    #[case(Position { x: 3, y: 8 }, Size { width: 10, height: 10 }, true)]
+    #[case(Position { x: 12, y: 8 }, Size { width: 10, height: 10 }, false)]
+    #[case(Position { x: 3, y: 20 }, Size { width: 10, height: 10 }, false)]
+    #[case(Position { x: 10, y: 10 }, Size { width: 10, height: 10 }, false)]
+    #[case(Position { x: 0, y: 0 }, Size { width: 0, height: 0 }, false)]
+    fn bounds_check(#[case] position: Position, #[case] size: Size, #[case] expected: bool) {
+        assert_eq!(expected, position.is_within_size(&size))
     }
 }

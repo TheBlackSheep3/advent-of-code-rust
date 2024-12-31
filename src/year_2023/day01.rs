@@ -52,7 +52,6 @@ fn get_calibration_values_with_words(calibration_input: &str) -> Result<Vec<i32>
     let re = Regex::new(r"^\D*(?P<first>\d)?.*(?P<second>\d)").unwrap();
     Ok(lines
         .map(|l| {
-
             let caps = re.captures(l).expect("invalid calibration line");
             match caps.name("first") {
                 Some(first) => {
@@ -108,7 +107,8 @@ zoneight234
     }
 
     // TODO: reenable test and get it to succeed
-    // #[test]
+    #[ignore = "words not parsed correctly"]
+    #[test]
     fn get_sum_with_word() {
         assert_eq!(
             get_calibration_values_sum_with_words(TEST_STR_WORDS).unwrap(),
@@ -125,7 +125,8 @@ zoneight234
     }
 
     // TODO: reenable test and get it to succeed
-    // #[test]
+    #[ignore = "words not parsed correctly"]
+    #[test]
     fn get_values_with_words() {
         assert_eq!(
             get_calibration_values_with_words(TEST_STR_WORDS).unwrap(),
