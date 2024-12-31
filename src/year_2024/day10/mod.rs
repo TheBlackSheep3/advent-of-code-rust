@@ -2,7 +2,6 @@ mod error;
 mod map;
 
 use error::Error;
-use crate::util::matrix::Matrix;
 
 pub fn sum_trailhead_scores(input: &str) -> Result<u32, Error> {
     Err(Error::ParsingFailed)
@@ -13,7 +12,7 @@ pub fn sum_trailhead_scores(input: &str) -> Result<u32, Error> {
 mod tests {
     use super::sum_trailhead_scores;
 
-    const TEST_STR: &str = "89010123
+    pub(super) const TEST_STR: &str = "89010123
 78121874
 87430965
 96549874
