@@ -1,5 +1,6 @@
 use std::ops::{Index, IndexMut};
 
+use super::size::Size;
 use iterators::{RowIterator, RowIteratorMut};
 
 #[derive(Debug, PartialEq)]
@@ -53,6 +54,13 @@ impl<T> Matrix<T> {
 
     pub fn col_count(&self) -> usize {
         self.columns
+    }
+
+    pub fn size(&self) -> Size {
+        Size {
+            width: self.columns,
+            height: self.rows,
+        }
     }
 
     pub fn transposed(&self) -> Matrix<&T> {
@@ -299,6 +307,8 @@ mod tests {
     use std::ops::AddAssign;
     use std::usize;
 
+    use crate::util::size::Size;
+
     use super::Error;
     use super::Matrix;
 
@@ -360,6 +370,13 @@ mod tests {
     ) {
         assert_eq!(expected_row_count, m.row_count());
         assert_eq!(expected_column_count, m.col_count());
+        assert_eq!(
+            Size {
+                width: expected_column_count,
+                height: expected_row_count
+            },
+            m.size()
+        );
     }
 
     enum IndexType {

@@ -2,11 +2,23 @@ mod error;
 mod map;
 
 use error::Error;
+use map::Map;
 
 pub fn sum_trailhead_scores(input: &str) -> Result<u32, Error> {
-    Err(Error::ParsingFailed)
+    let map = input.parse::<Map>()?;
+    let mut score_sum = 0u32;
+    for head in map.get_trail_heads() {
+        score_sum = score_sum
+            .checked_add(
+                map.get_trail_ends(head)
+                    .len()
+                    .try_into()
+                    .map_err(|_| Error::IntegerConversionFailed)?,
+            )
+            .ok_or(Error::IntegerOverflow)?
+    }
+    Ok(score_sum)
 }
-
 
 #[cfg(test)]
 mod tests {

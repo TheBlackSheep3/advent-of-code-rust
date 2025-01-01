@@ -6,7 +6,6 @@ mod map;
 mod position;
 mod position_diff;
 mod signed_diff;
-mod size;
 
 pub fn count_distinct_antinode_positions(input: &str) -> Result<usize, error::Error> {
     let map = input.parse::<map::Map>()?;

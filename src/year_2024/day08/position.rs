@@ -1,6 +1,5 @@
 use super::position_diff::PositionDifference;
 use super::signed_diff::SignedDiff;
-use super::size::Size;
 use crate::util::position::Position;
 
 impl Position {
@@ -20,10 +19,6 @@ impl Position {
         let x = self.x.checked_add_signed(diff.x_diff.checked_neg()?)?;
         let y = self.y.checked_add_signed(diff.y_diff.checked_neg()?)?;
         Some(Position { x, y })
-    }
-
-    pub fn is_within_size(&self, size: &Size) -> bool {
-        self.x < size.width && self.y < size.height
     }
 }
 
@@ -90,15 +85,5 @@ mod tests {
         #[case] expected: Option<Position>,
     ) {
         assert_eq!(expected, position.sub_diff(&position_diff))
-    }
-
-    #[rstest]
-    #[case(Position { x: 3, y: 8 }, Size { width: 10, height: 10 }, true)]
-    #[case(Position { x: 12, y: 8 }, Size { width: 10, height: 10 }, false)]
-    #[case(Position { x: 3, y: 20 }, Size { width: 10, height: 10 }, false)]
-    #[case(Position { x: 10, y: 10 }, Size { width: 10, height: 10 }, false)]
-    #[case(Position { x: 0, y: 0 }, Size { width: 0, height: 0 }, false)]
-    fn bounds_check(#[case] position: Position, #[case] size: Size, #[case] expected: bool) {
-        assert_eq!(expected, position.is_within_size(&size))
     }
 }

@@ -2,8 +2,8 @@ use super::antenna::Antenna;
 use super::antinode::Antinode;
 use super::error::Error;
 use super::position_diff::PositionDifference;
-use super::size::Size;
 use crate::util::position::Position;
+use crate::util::size::Size;
 use std::collections::hash_set::HashSet;
 
 #[derive(Debug, PartialEq)]

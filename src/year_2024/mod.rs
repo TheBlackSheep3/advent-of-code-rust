@@ -116,7 +116,12 @@ pub fn solve(day: u8, input: &str) {
                 Err(e) => println!("{}", e),
             }
         },
-        10 => todo!(),
+        10 => {
+            match day10::sum_trailhead_scores(input) {
+                Ok(x) => println!("part 1: {}", x),
+                Err(e) => println!("{}", e),
+            }
+        }
         11..25 => {
             super::print_not_implemented(2024, day);
         }
